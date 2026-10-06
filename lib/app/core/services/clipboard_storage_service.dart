@@ -82,6 +82,11 @@ class ClipboardStorageService extends GetxService {
     _persist();
   }
 
+  void clearAll() {
+    items.clear();
+    _persist();
+  }
+
   Future<void> copyToClipboard(String content) async {
     await Clipboard.setData(ClipboardData(text: content));
     lastCopiedContent.value = content;

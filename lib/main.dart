@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'app/core/constants/app_theme.dart';
 import 'app/core/services/clipboard_storage_service.dart';
+import 'app/core/services/settings_service.dart';
 import 'app/core/services/system_tools_service.dart';
 import 'app/core/services/web_server_service.dart';
 import 'app/routes/app_pages.dart';
@@ -16,6 +17,7 @@ void main() async {
   } catch (_) {}
 
   // Initialize Core Services
+  Get.put(SettingsService(), permanent: true);
   Get.put(SystemToolsService(), permanent: true);
   Get.put(WebServerService(), permanent: true);
   Get.put(ClipboardStorageService(), permanent: true);
@@ -28,14 +30,17 @@ class AndroidToolboxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'Android Toolbox',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
-      initialRoute: AppPages.INITIAL,
-      getPages: AppPages.routes,
+    final settingsService = Get.find<SettingsService>();
+    return Obx(
+      () => GetMaterialApp(
+        title: 'Android Toolbox',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: settingsService.themeMode.value,
+        initialRoute: AppPages.INITIAL,
+        getPages: AppPages.routes,
+      ),
     );
   }
 }

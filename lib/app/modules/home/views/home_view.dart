@@ -22,16 +22,24 @@ class HomeView extends GetView<HomeController> {
             // Top App Bar / Hero Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                padding: const EdgeInsets.fromLTRB(20, 18, 16, 12),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            ClipRRect(
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.asset(
                                 'assets/images/logo.jpg',
@@ -40,33 +48,66 @@ class HomeView extends GetView<HomeController> {
                                 fit: BoxFit.cover,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'ANDROID TOOLBOX',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                color: textPrimary,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Swiss-knife system utilities & diagnostics',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textSecondary,
-                            fontWeight: FontWeight.w500,
                           ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ANDROID TOOLBOX',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: textPrimary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Swiss-knife system utilities',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildHeaderIconButton(
+                          context,
+                          icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                          iconColor: isDark ? Colors.amber : AppColors.primary,
+                          tooltip: isDark ? 'Giao diện Sáng' : 'Giao diện Tối',
+                          onTap: () => controller.settingsService.toggleTheme(),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildHeaderIconButton(
+                          context,
+                          icon: Icons.qr_code_scanner_rounded,
+                          tooltip: 'Quét QR',
+                          onTap: () => Get.toNamed(AppRoutes.QR),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildHeaderIconButton(
+                          context,
+                          icon: Icons.settings_rounded,
+                          tooltip: 'Cài đặt',
+                          onTap: () => Get.toNamed(AppRoutes.SETTINGS),
                         ),
                       ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.qr_code_scanner_rounded, size: 26),
-                      tooltip: 'Quick QR Scanner',
-                      onPressed: () => Get.toNamed(AppRoutes.QR),
                     ),
                   ],
                 ),
@@ -81,16 +122,23 @@ class HomeView extends GetView<HomeController> {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.18),
-                        AppColors.accent.withOpacity(0.08),
-                      ],
+                      colors: isDark
+                          ? [
+                              AppColors.primary.withOpacity(0.20),
+                              AppColors.accent.withOpacity(0.08),
+                            ]
+                          : [
+                              AppColors.primary.withOpacity(0.10),
+                              AppColors.accent.withOpacity(0.05),
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: isDark
+                          ? AppColors.primary.withOpacity(0.35)
+                          : AppColors.primary.withOpacity(0.25),
                       width: 1,
                     ),
                   ),
@@ -114,7 +162,7 @@ class HomeView extends GetView<HomeController> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.primaryLight,
+                                color: isDark ? AppColors.primaryLight : AppColors.primary,
                                 letterSpacing: 1.0,
                               ),
                             ),
@@ -237,5 +285,41 @@ class HomeView extends GetView<HomeController> {
         ),
       ),
     );
+  }
+
+  Widget _buildHeaderIconButton(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback onTap,
+    String? tooltip,
+    Color? iconColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = iconColor ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight);
+    final bg = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04);
+    final border = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+
+    final button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border, width: 1),
+          ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+      ),
+    );
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: button);
+    }
+    return button;
   }
 }

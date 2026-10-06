@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import '../../../core/services/clipboard_storage_service.dart';
+import '../../../core/services/settings_service.dart';
 import '../../../core/services/system_tools_service.dart';
 import '../../../core/services/web_server_service.dart';
-import '../../../core/services/clipboard_storage_service.dart';
 
 class HomeController extends GetxController {
   final systemTools = SystemToolsService.to;
   final webServer = WebServerService.to;
   final clipboardService = ClipboardStorageService.to;
+  final settingsService = Get.find<SettingsService>();
 
   final RxInt installedAppsCount = 0.obs;
   final RxInt batteryLevel = 0.obs;
@@ -23,9 +25,11 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     refreshQuickStats();
-    // Refresh stats every 8 seconds
+    // Refresh stats every 8 seconds if autoRefresh enabled
     _refreshTimer = Timer.periodic(const Duration(seconds: 8), (_) {
-      refreshQuickStats();
+      if (settingsService.autoRefreshStats.value) {
+        refreshQuickStats();
+      }
     });
   }
 

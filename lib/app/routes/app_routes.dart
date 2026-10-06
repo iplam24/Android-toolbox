@@ -9,4 +9,5 @@ abstract class AppRoutes {
   static const PRIVACY = '/privacy';
   static const ADB = '/adb';
   static const DEVICE_INFO = '/device-info';
+  static const SETTINGS = '/settings';
 }

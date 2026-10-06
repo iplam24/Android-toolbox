@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../services/settings_service.dart';
 
 class BentoCard extends StatelessWidget {
   final String title;
@@ -33,7 +35,12 @@ class BentoCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          try {
+            Get.find<SettingsService>().vibrate();
+          } catch (_) {}
+          onTap();
+        },
         borderRadius: BorderRadius.circular(22),
         splashColor: accentColor.withOpacity(0.12),
         highlightColor: accentColor.withOpacity(0.06),
@@ -46,9 +53,9 @@ class BentoCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isDark
-                    ? Colors.black.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.03),
-                blurRadius: 10,
+                    ? Colors.black.withOpacity(0.25)
+                    : const Color(0x0C0F172A),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -63,7 +70,7 @@ class BentoCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.12),
+                      color: accentColor.withOpacity(isDark ? 0.12 : 0.10),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: accentColor.withOpacity(0.3),
@@ -74,17 +81,22 @@ class BentoCard extends StatelessWidget {
                   ),
                   if (badge != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.15),
+                        color: accentColor.withOpacity(isDark ? 0.15 : 0.10),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: accentColor.withOpacity(0.25),
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         badge!,
                         style: TextStyle(
                           color: accentColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     )

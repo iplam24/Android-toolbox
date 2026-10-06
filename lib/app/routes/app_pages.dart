@@ -31,6 +31,9 @@ import '../modules/adb_tools/views/adb_view.dart';
 import '../modules/device_info/bindings/device_info_binding.dart';
 import '../modules/device_info/views/device_info_view.dart';
 
+import '../modules/settings/bindings/settings_binding.dart';
+import '../modules/settings/views/settings_view.dart';
+
 class AppPages {
   static const INITIAL = AppRoutes.HOME;
 
@@ -84,6 +87,11 @@ class AppPages {
       name: AppRoutes.DEVICE_INFO,
       page: () => const DeviceInfoView(),
       binding: DeviceInfoBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.SETTINGS,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
     ),
   ];
 }
