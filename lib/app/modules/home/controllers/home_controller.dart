@@ -1,0 +1,70 @@
+import 'dart:async';
+import 'package:get/get.dart';
+import '../../../core/services/system_tools_service.dart';
+import '../../../core/services/web_server_service.dart';
+import '../../../core/services/clipboard_storage_service.dart';
+
+class HomeController extends GetxController {
+  final systemTools = SystemToolsService.to;
+  final webServer = WebServerService.to;
+  final clipboardService = ClipboardStorageService.to;
+
+  final RxInt installedAppsCount = 0.obs;
+  final RxInt batteryLevel = 0.obs;
+  final RxDouble batteryTemp = 0.0.obs;
+  final RxString batteryPlugged = 'Discharging'.obs;
+  final RxString localIp = 'Offline'.obs;
+  final RxBool isShizukuRunning = false.obs;
+  final RxInt highRiskAppsCount = 0.obs;
+
+  Timer? _refreshTimer;
+
+  @override
+  void onInit() {
+    super.onInit();
+    refreshQuickStats();
+    // Refresh stats every 8 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      refreshQuickStats();
+    });
+  }
+
+  @override
+  void onClose() {
+    _refreshTimer?.cancel();
+    super.onClose();
+  }
+
+  Future<void> refreshQuickStats() async {
+    try {
+      // 1. Battery
+      final battery = await systemTools.getAdvancedBatteryInfo();
+      if (battery != null) {
+        batteryLevel.value = battery.level;
+        batteryTemp.value = battery.temperature;
+        batteryPlugged.value = battery.plugged;
+      }
+
+      // 2. Local IP
+      final ip = await webServer.getLocalIpAddress();
+      localIp.value = ip;
+
+      // 3. Shizuku status
+      isShizukuRunning.value = await systemTools.isShizukuInstalled();
+
+      // 4. Installed Apps count (if not loaded yet)
+      if (installedAppsCount.value == 0) {
+        final apps = await systemTools.getInstalledPackages(includeSystem: false);
+        installedAppsCount.value = apps.length;
+      }
+
+      // 5. Privacy audit
+      if (highRiskAppsCount.value == 0) {
+        final audit = await systemTools.getDangerousPermissionsAudit();
+        highRiskAppsCount.value = audit.where((a) => a.riskScore >= 8).length;
+      }
+    } catch (e) {
+      print('Error refreshing quick stats: $e');
+    }
+  }
+}
