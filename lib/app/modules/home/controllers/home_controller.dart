@@ -35,6 +35,25 @@ class HomeController extends GetxController {
     super.onClose();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    _loadBackgroundStats();
+  }
+
+  Future<void> _loadBackgroundStats() async {
+    try {
+      if (installedAppsCount.value == 0) {
+        final apps = await systemTools.getInstalledPackages(includeSystem: false);
+        installedAppsCount.value = apps.length;
+      }
+      if (highRiskAppsCount.value == 0) {
+        final audit = await systemTools.getDangerousPermissionsAudit();
+        highRiskAppsCount.value = audit.where((a) => a.riskScore >= 8).length;
+      }
+    } catch (_) {}
+  }
+
   Future<void> refreshQuickStats() async {
     try {
       // 1. Battery
@@ -51,18 +70,6 @@ class HomeController extends GetxController {
 
       // 3. Shizuku status
       isShizukuRunning.value = await systemTools.isShizukuInstalled();
-
-      // 4. Installed Apps count (if not loaded yet)
-      if (installedAppsCount.value == 0) {
-        final apps = await systemTools.getInstalledPackages(includeSystem: false);
-        installedAppsCount.value = apps.length;
-      }
-
-      // 5. Privacy audit
-      if (highRiskAppsCount.value == 0) {
-        final audit = await systemTools.getDangerousPermissionsAudit();
-        highRiskAppsCount.value = audit.where((a) => a.riskScore >= 8).length;
-      }
     } catch (e) {
       print('Error refreshing quick stats: $e');
     }

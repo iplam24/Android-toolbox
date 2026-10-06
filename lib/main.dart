@@ -11,7 +11,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Local Storage
-  await GetStorage.init();
+  try {
+    await GetStorage.init();
+  } catch (_) {}
 
   // Initialize Core Services
   Get.put(SystemToolsService(), permanent: true);

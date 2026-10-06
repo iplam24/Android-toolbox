@@ -42,13 +42,24 @@ class DeviceInfoController extends GetxController {
     }
   }
 
+  int _lastAccelTime = 0;
+  int _lastGyroTime = 0;
+
   void _startSensorStreams() {
     try {
       _accelSub = accelerometerEventStream().listen((event) {
-        accelerometerValues.value = [event.x, event.y, event.z];
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastAccelTime > 250) {
+          _lastAccelTime = now;
+          accelerometerValues.value = [event.x, event.y, event.z];
+        }
       });
       _gyroSub = gyroscopeEventStream().listen((event) {
-        gyroscopeValues.value = [event.x, event.y, event.z];
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastGyroTime > 250) {
+          _lastGyroTime = now;
+          gyroscopeValues.value = [event.x, event.y, event.z];
+        }
       });
     } catch (e) {
       print('Sensor error: $e');

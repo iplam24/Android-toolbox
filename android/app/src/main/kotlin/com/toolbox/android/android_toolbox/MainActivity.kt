@@ -208,7 +208,7 @@ class MainActivity : FlutterActivity() {
 
     private fun getInstalledPackagesList(includeSystem: Boolean): List<Map<String, Any>> {
         val pm = packageManager
-        val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        val packages = pm.getInstalledPackages(0)
         val list = mutableListOf<Map<String, Any>>()
 
         for (pkg in packages) {
