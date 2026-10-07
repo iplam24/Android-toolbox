@@ -122,21 +122,48 @@ class DeviceInfoView extends GetView<DeviceInfoController> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      ListTile(
+                      Obx(() => ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: Colors.blue.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
                           child: const Icon(Icons.water_drop_rounded, color: Colors.blue),
                         ),
-                        title: const Text('Kiểm tra độ kín kháng nước', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        subtitle: const Text('Đo áp suất nén khí bằng Barometer khi ấn màn hình', style: TextStyle(fontSize: 12)),
+                        title: Row(
+                          children: [
+                            const Text('Kiểm tra độ kín kháng nước', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: (controller.hasBarometer.value ? Colors.green : Colors.orange).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                controller.hasBarometer.value ? 'Có Áp kế' : 'Không có Áp kế',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.hasBarometer.value ? Colors.green : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          controller.hasBarometer.value
+                              ? 'Đo áp suất nén khí bằng Barometer khi ấn màn hình'
+                              : 'Máy không có cảm biến áp suất • Xem giải pháp thay thế',
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         trailing: ElevatedButton(
                           onPressed: () => Get.to(() => const WaterResistanceTestView()),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade700),
-                          child: const Text('Đo áp suất'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: controller.hasBarometer.value ? Colors.blue.shade700 : Colors.grey.shade700,
+                          ),
+                          child: Text(controller.hasBarometer.value ? 'Đo áp suất' : 'Chi tiết'),
                         ),
-                      ),
+                      )),
                       const Divider(),
                       ListTile(
                         contentPadding: EdgeInsets.zero,

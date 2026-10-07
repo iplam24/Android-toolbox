@@ -10,6 +10,7 @@ class DeviceInfoController extends GetxController {
 
   final Rx<HardwareInfoModel?> hardwareInfo = Rx<HardwareInfoModel?>(null);
   final RxBool isLoading = true.obs;
+  final RxBool hasBarometer = false.obs;
 
   // Real-time Sensor Values
   final RxList<double> accelerometerValues = <double>[0, 0, 0].obs;
@@ -37,6 +38,7 @@ class DeviceInfoController extends GetxController {
     try {
       final info = await systemTools.getHardwareDeviceInfo();
       hardwareInfo.value = info;
+      hasBarometer.value = await systemTools.hasBarometerSensor();
     } finally {
       isLoading.value = false;
     }

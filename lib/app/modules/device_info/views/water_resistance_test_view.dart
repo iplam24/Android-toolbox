@@ -158,37 +158,82 @@ class _WaterResistanceTestViewState extends State<WaterResistanceTestView> {
                   if (!hasSensor) ...[
                     // Trường hợp máy không có cảm biến áp suất
                     Card(
-                      elevation: 2,
+                      elevation: 3,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.orange.withOpacity(0.4)),
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(color: Colors.amber.withOpacity(0.5), width: 1.2),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(22),
                         child: Column(
                           children: [
-                            const Icon(Icons.sensors_off_rounded, size: 54, color: Colors.orange),
-                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.sensors_off_rounded, size: 48, color: Colors.amber),
+                            ),
+                            const SizedBox(height: 16),
                             const Text(
                               'Thiết bị không có Cảm biến áp kế (Barometer)',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
                             const Text(
-                              'Phần cứng điện thoại này không trang bị cảm biến đo áp suất khí quyển. Vì vậy không thể đo độ nén khí bằng phương pháp áp kế.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              'Phần cứng điện thoại của bạn không trang bị cảm biến đo áp suất khí quyển. '
+                              'Điều này là bình thường trên hầu hết các dòng máy Android phân khúc tầm trung / cận cao cấp.',
+                              style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Get.back();
-                                Get.to(() => const SpeakerWaterEjectView());
-                              },
-                              icon: const Icon(Icons.air_rounded),
-                              label: const Text('Dùng tính năng Đẩy nước bằng loa (165Hz)'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.toolsColor),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.cyan.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.cyan.withOpacity(0.3)),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.lightbulb_rounded, color: Colors.cyan, size: 18),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'GIẢI PHÁP THỰC TẾ KHI MÁY VÀO NƯỚC',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.cyan),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Nếu máy vừa bị đi mưa hoặc vô tình rơi nước, hãy dùng ngay công cụ Đẩy nước màng loa 165Hz. '
+                                    'Màng loa sẽ phát sóng âm rung cực mạnh giúp đẩy hết giọt nước đọng trong lưới loa ra ngoài an toàn!',
+                                    style: TextStyle(fontSize: 12, height: 1.4),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Get.back();
+                                  Get.to(() => const SpeakerWaterEjectView());
+                                },
+                                icon: const Icon(Icons.waves_rounded),
+                                label: const Text('MỞ CÔNG CỤ ĐẨY NƯỚC LOA 165Hz', style: TextStyle(fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.cyan.shade700,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
                             ),
                           ],
                         ),

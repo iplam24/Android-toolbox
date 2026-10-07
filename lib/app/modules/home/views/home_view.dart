@@ -203,8 +203,8 @@ class HomeView extends GetView<HomeController> {
                   // 1. 📦 Quản lý APK
                   Obx(() => BentoCard(
                     title: 'Quản lý APK',
-                    subtitle: '${controller.installedAppsCount.value} ứng dụng',
-                    badge: 'TRÍCH XUẤT',
+                    subtitle: '${controller.installedAppsCount.value} ứng dụng • Lọc tải ngoài',
+                    badge: 'LỌC APP NGOÀI',
                     icon: Icons.inventory_2_rounded,
                     accentColor: AppColors.apkColor,
                     onTap: () => Get.toNamed(AppRoutes.APK),
@@ -214,7 +214,7 @@ class HomeView extends GetView<HomeController> {
                   Obx(() => BentoCard(
                     title: 'Bộ nhớ tạm',
                     subtitle: '${controller.clipboardService.items.length} mục đã lưu',
-                    badge: 'LỊCH SỬ',
+                    badge: 'CLIPBOARD',
                     icon: Icons.content_paste_rounded,
                     accentColor: AppColors.clipboardColor,
                     onTap: () => Get.toNamed(AppRoutes.CLIPBOARD),
@@ -222,9 +222,9 @@ class HomeView extends GetView<HomeController> {
 
                   // 3. 📡 Mạng & Ping
                   Obx(() => BentoCard(
-                    title: 'Mạng & Ping',
-                    subtitle: controller.localIpText,
-                    badge: 'PING / QUÉT',
+                    title: 'Mạng & DNS',
+                    subtitle: 'Private DNS • ${controller.localIpText}',
+                    badge: 'DNS & PING',
                     icon: Icons.wifi_tethering_rounded,
                     accentColor: AppColors.networkColor,
                     onTap: () => Get.toNamed(AppRoutes.NETWORK),
@@ -232,9 +232,9 @@ class HomeView extends GetView<HomeController> {
 
                   // 4. 🔋 Pin & Nguồn
                   Obx(() => BentoCard(
-                    title: 'Pin & Nguồn',
+                    title: 'Pin & Sức khỏe',
                     subtitle: '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C',
-                    badge: controller.batteryPluggedText,
+                    badge: 'CHAI PIN & CHU KỲ',
                     icon: Icons.battery_charging_full_rounded,
                     accentColor: AppColors.batteryColor,
                     onTap: () => Get.toNamed(AppRoutes.BATTERY),
@@ -243,8 +243,8 @@ class HomeView extends GetView<HomeController> {
                   // 5. 📁 Truyền tệp Web
                   Obx(() => BentoCard(
                     title: 'Truyền tệp Web',
-                    subtitle: controller.webServer.isRunning.value ? 'Đang phát sóng' : 'Sẵn sàng chia sẻ',
-                    badge: controller.webServer.isRunning.value ? 'TRỰC TUYẾN' : 'HTTP LAN',
+                    subtitle: controller.webServer.isRunning.value ? 'Đang phát sóng LAN' : 'Kéo thả Wi-Fi & Xác nhận',
+                    badge: controller.webServer.isRunning.value ? 'TRỰC TUYẾN' : 'WEB SHARE',
                     icon: Icons.folder_shared_rounded,
                     accentColor: AppColors.fileTransferColor,
                     onTap: () => Get.toNamed(AppRoutes.FILE_TRANSFER),
@@ -263,7 +263,7 @@ class HomeView extends GetView<HomeController> {
                   // 7. ⚙️ Công cụ ADB
                   Obx(() => BentoCard(
                     title: 'Công cụ ADB',
-                    subtitle: controller.isShizukuRunning.value ? 'Shizuku sẵn sàng' : 'Không dây & Lệnh',
+                    subtitle: controller.isShizukuRunning.value ? 'Shizuku sẵn sàng' : 'Không dây & Logcat',
                     badge: 'LOGCAT',
                     icon: Icons.terminal_rounded,
                     accentColor: AppColors.adbColor,
@@ -272,9 +272,9 @@ class HomeView extends GetView<HomeController> {
 
                   // 8. 🛠 Cảm biến & Máy
                   BentoCard(
-                    title: 'Cảm biến & Máy',
-                    subtitle: 'Kiểm tra phần cứng',
-                    badge: 'KIỂM TRA',
+                    title: 'Cảm biến & Test',
+                    subtitle: 'Nước, Loa 165Hz & Mic',
+                    badge: 'TEST PHẦN CỨNG',
                     icon: Icons.hardware_rounded,
                     accentColor: AppColors.toolsColor,
                     onTap: () => Get.toNamed(AppRoutes.DEVICE_INFO),

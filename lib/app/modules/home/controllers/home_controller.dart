@@ -4,6 +4,7 @@ import '../../../core/services/clipboard_storage_service.dart';
 import '../../../core/services/settings_service.dart';
 import '../../../core/services/system_tools_service.dart';
 import '../../../core/services/web_server_service.dart';
+import '../../../core/widgets/permission_sheet.dart';
 
 class HomeController extends GetxController {
   final systemTools = SystemToolsService.to;
@@ -61,6 +62,9 @@ class HomeController extends GetxController {
   void onReady() {
     super.onReady();
     _loadBackgroundStats();
+    Future.delayed(const Duration(milliseconds: 700), () {
+      PermissionSheet.show();
+    });
   }
 
   Future<void> _loadBackgroundStats() async {
