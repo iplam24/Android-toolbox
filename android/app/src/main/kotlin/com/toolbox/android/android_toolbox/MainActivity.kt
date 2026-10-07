@@ -1,9 +1,14 @@
 package com.toolbox.android.android_toolbox
 
 import android.app.ActivityManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.PowerManager
+import androidx.core.app.NotificationCompat
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -227,6 +232,34 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                 }
+                "showIncomingNotification" -> {
+                    try {
+                        val fileName = call.argument<String>("fileName") ?: "Tệp tin mới"
+                        val size = call.argument<String>("size") ?: ""
+                        showIncomingNotificationInternal(fileName, size)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "cancelIncomingNotification" -> {
+                    try {
+                        cancelIncomingNotificationInternal()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "setServerWakeLock" -> {
+                    try {
+                        val enable = call.argument<Boolean>("enable") ?: false
+                        val serverUrl = call.argument<String>("serverUrl") ?: ""
+                        setServerWakeLockInternal(enable, serverUrl)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 "openWirelessDebuggingSettings" -> {
                     try {
                         val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS).apply {
@@ -354,6 +387,12 @@ class MainActivity : FlutterActivity() {
         stopToneInternal()
         stopRecordingMicInternal()
         mediaPlayer?.release()
+        if (webServerWakeLock?.isHeld == true) {
+            webServerWakeLock?.release()
+        }
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        nm?.cancel(NOTIF_ID_SERVER)
+        nm?.cancel(NOTIF_ID_INCOMING)
         super.onDestroy()
     }
 
@@ -881,6 +920,113 @@ class MainActivity : FlutterActivity() {
             return true
         } catch (_: Exception) {
             return false
+        }
+    }
+
+    // --- WebServer Background WakeLock & Notifications ---
+    private var webServerWakeLock: PowerManager.WakeLock? = null
+    private val NOTIF_CHANNEL_INCOMING = "webshare_incoming_channel"
+    private val NOTIF_CHANNEL_SERVER = "webshare_server_channel"
+    private val NOTIF_ID_SERVER = 1001
+    private val NOTIF_ID_INCOMING = 1002
+
+    private fun initNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val incomingChannel = NotificationChannel(
+                NOTIF_CHANNEL_INCOMING,
+                "WebShare Tệp Đến",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Cảnh báo khi máy tính gửi tệp sang điện thoại"
+                enableVibration(true)
+            }
+
+            val serverChannel = NotificationChannel(
+                NOTIF_CHANNEL_SERVER,
+                "WebShare Máy Chủ Hoạt Động",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Thông báo máy chủ chia sẻ tệp Web đang chạy ngầm"
+            }
+
+            nm.createNotificationChannel(incomingChannel)
+            nm.createNotificationChannel(serverChannel)
+        }
+    }
+
+    private fun showIncomingNotificationInternal(fileName: String, size: String) {
+        initNotificationChannels()
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE else PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val notif = NotificationCompat.Builder(this, NOTIF_CHANNEL_INCOMING)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("📥 Bạn có tệp mới từ máy tính!")
+            .setContentText("$fileName ($size) • Chạm để xác nhận")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Máy tính vừa gửi tệp: $fileName ($size)\nChạm vào đây để xác nhận lưu hoặc từ chối trên điện thoại."))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        nm.notify(NOTIF_ID_INCOMING, notif)
+    }
+
+    private fun cancelIncomingNotificationInternal() {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(NOTIF_ID_INCOMING)
+    }
+
+    private fun setServerWakeLockInternal(enable: Boolean, serverUrl: String) {
+        initNotificationChannels()
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+
+        if (enable) {
+            if (webServerWakeLock == null) {
+                webServerWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AndroidToolbox:WebServerWakeLock")
+            }
+            if (webServerWakeLock?.isHeld == false) {
+                webServerWakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
+            }
+
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                1,
+                intent,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE else PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val notif = NotificationCompat.Builder(this, NOTIF_CHANNEL_SERVER)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("⚡ Máy chủ WebShare đang chạy ngầm")
+                .setContentText("Truy cập tại: $serverUrl")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .build()
+
+            nm.notify(NOTIF_ID_SERVER, notif)
+        } else {
+            if (webServerWakeLock?.isHeld == true) {
+                webServerWakeLock?.release()
+            }
+            nm.cancel(NOTIF_ID_SERVER)
         }
     }
 }

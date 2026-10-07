@@ -222,6 +222,78 @@ class FileTransferView extends GetView<FileTransferController> {
                 ),
               ),
             ),
+            // Upload from Phone to PC Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: AppColors.fileTransferColor.withOpacity(0.35)),
+              ),
+              color: AppColors.fileTransferColor.withOpacity(0.06),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.fileTransferColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.cloud_upload_rounded, color: AppColors.fileTransferColor, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'CHIA SẺ SANG MÁY TÍNH',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.fileTransferColor),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Chọn ảnh, video, tài liệu từ máy để máy tính tải về',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Obx(() => SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: controller.isPickingFiles.value
+                            ? null
+                            : () => controller.pickAndShareFilesFromPhone(),
+                        icon: controller.isPickingFiles.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.add_photo_alternate_rounded, size: 20),
+                        label: Text(
+                          controller.isPickingFiles.value ? 'ĐANG CHUẨN BỊ TỆP...' : 'CHỌN ẢNH & TỆP TỪ ĐIỆN THOẠI',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.fileTransferColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 1,
+                        ),
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Files in Transfer Folder
@@ -245,6 +317,12 @@ class FileTransferView extends GetView<FileTransferController> {
                               style: const TextStyle(fontSize: 12, color: AppColors.fileTransferColor, fontWeight: FontWeight.bold),
                             )),
                             const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline_rounded, size: 20, color: AppColors.fileTransferColor),
+                              tooltip: 'Thêm tệp từ máy',
+                              onPressed: () => controller.pickAndShareFilesFromPhone(),
+                              visualDensity: VisualDensity.compact,
+                            ),
                             IconButton(
                               icon: const Icon(Icons.refresh_rounded, size: 18),
                               tooltip: 'Làm mới danh sách',

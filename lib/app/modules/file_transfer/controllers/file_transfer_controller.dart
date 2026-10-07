@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -10,6 +11,7 @@ class FileTransferController extends GetxController {
   final webServer = WebServerService.to;
 
   final RxInt selectedPort = 8080.obs;
+  final RxBool isPickingFiles = false.obs;
 
   @override
   void onInit() {
@@ -228,6 +230,49 @@ class FileTransferController extends GetxController {
       ),
       barrierDismissible: false,
     );
+  }
+
+  Future<void> pickAndShareFilesFromPhone() async {
+    try {
+      isPickingFiles.value = true;
+      final files = await FilePicker.pickFiles(
+        type: FileType.any,
+      );
+
+      if (files.isEmpty) {
+        isPickingFiles.value = false;
+        return;
+      }
+
+      final targetDir = await webServer.resolveFolder(webServer.defaultTargetFolder.value);
+      int copiedCount = 0;
+
+      for (final platformFile in files) {
+        if (platformFile.path == null) continue;
+        final sourceFile = File(platformFile.path!);
+        if (!await sourceFile.exists()) continue;
+
+        final fileName = platformFile.name;
+        final destFile = File('${targetDir.path}/$fileName');
+        await sourceFile.copy(destFile.path);
+        copiedCount++;
+      }
+
+      await webServer.refreshFilesList();
+      isPickingFiles.value = false;
+
+      Get.snackbar(
+        'Đã sẵn sàng tải về',
+        'Đã thêm $copiedCount tệp từ điện thoại vào WebShare. Máy tính có thể tải về ngay lập tức!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.success.withOpacity(0.95),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      isPickingFiles.value = false;
+      Get.snackbar('Lỗi chọn tệp', 'Không thể chọn tệp: $e');
+    }
   }
 
   Future<void> shareFile(WebShareFileInfo file) async {

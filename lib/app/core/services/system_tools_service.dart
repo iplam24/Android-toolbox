@@ -197,6 +197,30 @@ class SystemToolsService extends GetxService {
     }
   }
 
+  Future<void> showIncomingNotification(String fileName, String size) async {
+    try {
+      await _channel.invokeMethod('showIncomingNotification', {
+        'fileName': fileName,
+        'size': size,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> cancelIncomingNotification() async {
+    try {
+      await _channel.invokeMethod('cancelIncomingNotification');
+    } catch (_) {}
+  }
+
+  Future<void> setServerWakeLock(bool enable, String serverUrl) async {
+    try {
+      await _channel.invokeMethod('setServerWakeLock', {
+        'enable': enable,
+        'serverUrl': serverUrl,
+      });
+    } catch (_) {}
+  }
+
   // --- Hardware Tests (Barometer, Tone, Mic) ---
   Future<bool> hasBarometerSensor() async {
     try {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:get/get.dart' hide Response;
 import 'package:shelf/shelf.dart';
@@ -258,6 +259,9 @@ class WebServerService extends GetxService {
       prompt.decisionCompleter.complete(null);
     } finally {
       activePrompt.value = null;
+      try {
+        await SystemToolsService.to.cancelIncomingNotification();
+      } catch (_) {}
     }
   }
 
@@ -298,7 +302,7 @@ class WebServerService extends GetxService {
         }).toList();
 
         return Response.ok(
-          '{"status": "ok", "files": ${list.map((e) => '{"name": "${e['name']}", "size": ${e['size']}, "formattedSize": "${e['formattedSize']}", "category": "${e['category']}"}').toList()}}',
+          jsonEncode({'status': 'ok', 'files': list}),
           headers: {'content-type': 'application/json; charset=utf-8'},
         );
       });
@@ -388,17 +392,27 @@ class WebServerService extends GetxService {
             // Present prompt to phone user
             activePrompt.value = prompt;
 
+            // Trigger local notification so user gets alert even when in other apps
+            try {
+              await SystemToolsService.to.showIncomingNotification(prompt.fileName, prompt.formattedSize);
+            } catch (_) {}
+
             // Wait for phone response with 60 seconds timeout
             final savedPath = await completer.future.timeout(
               const Duration(seconds: 60),
               onTimeout: () {
                 activePrompt.value = null;
                 try {
+                  SystemToolsService.to.cancelIncomingNotification();
                   stagingFile.deleteSync();
                 } catch (_) {}
                 return null;
               },
             );
+
+            try {
+              await SystemToolsService.to.cancelIncomingNotification();
+            } catch (_) {}
 
             if (savedPath != null) {
               return Response.ok(
@@ -468,6 +482,12 @@ class WebServerService extends GetxService {
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
       isRunning.value = true;
       serverUrl.value = 'http://$localIp:$port';
+
+      // Keep server alive across background task switching & show persistent notification
+      try {
+        await SystemToolsService.to.setServerWakeLock(true, serverUrl.value);
+      } catch (_) {}
+
       return true;
     } catch (e) {
       print('Error starting Web Server: $e');
@@ -482,6 +502,11 @@ class WebServerService extends GetxService {
     isRunning.value = false;
     serverUrl.value = '';
     activePrompt.value = null;
+
+    try {
+      await SystemToolsService.to.setServerWakeLock(false, '');
+      await SystemToolsService.to.cancelIncomingNotification();
+    } catch (_) {}
   }
 
   Future<String> getLocalIpAddress() async {
@@ -1116,6 +1141,8 @@ class WebServerService extends GetxService {
 
     // Initial load
     fetchFilesList();
+    // Auto-refresh every 3s so files shared from phone appear in real-time
+    setInterval(fetchFilesList, 3000);
   </script>
 </body>
 </html>
