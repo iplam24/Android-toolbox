@@ -188,15 +188,16 @@ class FileTransferView extends GetView<FileTransferController> {
                       return ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: controller.webServer.sharedFilesList.length,
+                        itemCount: controller.webServer.sharedFilesDetails.length,
                         separatorBuilder: (context, index) => const Divider(),
                         itemBuilder: (context, index) {
-                          final fileName = controller.webServer.sharedFilesList[index];
+                          final fileInfo = controller.webServer.sharedFilesDetails[index];
                           return ListTile(
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.insert_drive_file_rounded, color: AppColors.fileTransferColor),
-                            title: Text(fileName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            title: Text(fileInfo.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            subtitle: Text(fileInfo.formattedSize, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                           );
                         },
                       );
