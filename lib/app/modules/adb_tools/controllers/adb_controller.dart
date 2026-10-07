@@ -48,7 +48,7 @@ class AdbController extends GetxController {
   void copyLogs() {
     if (logcatLogs.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: logcatLogs.join('\n')));
-      Get.snackbar('Copied', 'Logcat output copied to clipboard');
+      Get.snackbar('Đã sao chép', 'Đã sao chép nhật ký Logcat vào bộ nhớ tạm');
     }
   }
 }

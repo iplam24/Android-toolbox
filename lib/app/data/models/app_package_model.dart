@@ -10,6 +10,10 @@ class AppPackageModel {
   final int lastUpdateTime;
   final int targetSdkVersion;
   final int minSdkVersion;
+  final String installerPackageName;
+  final String installerSource;
+  final bool isFromPlayStore;
+  final bool isSideloaded;
   final List<String> permissionsGranted;
   final List<String> permissionsDenied;
 
@@ -25,6 +29,10 @@ class AppPackageModel {
     required this.lastUpdateTime,
     required this.targetSdkVersion,
     required this.minSdkVersion,
+    this.installerPackageName = '',
+    this.installerSource = '',
+    this.isFromPlayStore = false,
+    this.isSideloaded = false,
     this.permissionsGranted = const [],
     this.permissionsDenied = const [],
   });
@@ -42,6 +50,10 @@ class AppPackageModel {
       lastUpdateTime: (map['lastUpdateTime'] as num?)?.toInt() ?? 0,
       targetSdkVersion: (map['targetSdkVersion'] as num?)?.toInt() ?? 0,
       minSdkVersion: (map['minSdkVersion'] as num?)?.toInt() ?? 0,
+      installerPackageName: map['installerPackageName']?.toString() ?? '',
+      installerSource: map['installerSource']?.toString() ?? (map['isFromPlayStore'] == true ? 'Google Play Store' : 'Cài ngoài (APK)'),
+      isFromPlayStore: map['isFromPlayStore'] == true,
+      isSideloaded: map['isSideloaded'] == true,
       permissionsGranted: (map['permissionsGranted'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
@@ -58,9 +70,9 @@ class AppPackageModel {
     final double kb = apkSize / 1024;
     final double mb = kb / 1024;
     final double gb = mb / 1024;
+
     if (gb >= 1) return '${gb.toStringAsFixed(1)} GB';
     if (mb >= 1) return '${mb.toStringAsFixed(1)} MB';
-    if (kb >= 1) return '${kb.toStringAsFixed(1)} KB';
-    return '$apkSize B';
+    return '${kb.toStringAsFixed(0)} KB';
   }
 }

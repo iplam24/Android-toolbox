@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../constants/app_colors.dart';
+import 'usage_guide_sheet.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
   final List<Widget>? actions;
   final bool showBack;
+  final UsageGuideData? usageGuide;
 
   const CustomAppBar({
     super.key,
@@ -13,6 +16,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.subtitle,
     this.actions,
     this.showBack = true,
+    this.usageGuide,
   });
 
   @override
@@ -20,6 +24,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final combinedActions = <Widget>[
+      ...?actions,
+      if (usageGuide != null)
+        IconButton(
+          icon: const Icon(Icons.help_outline_rounded, color: AppColors.primary),
+          tooltip: 'Cách dùng',
+          onPressed: () => showUsageGuideBottomSheet(context, usageGuide!),
+        ),
+    ];
 
     return AppBar(
       leading: showBack
@@ -51,7 +65,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
         ],
       ),
-      actions: actions,
+      actions: combinedActions.isNotEmpty ? combinedActions : null,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(

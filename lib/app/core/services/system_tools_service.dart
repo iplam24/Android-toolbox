@@ -141,6 +141,16 @@ class SystemToolsService extends GetxService {
     }
   }
 
+  // Private DNS Settings
+  Future<bool> openPrivateDnsSettings() async {
+    try {
+      final bool? res = await _channel.invokeMethod('openPrivateDnsSettings');
+      return res ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> isShizukuInstalled() async {
     try {
       final bool? res = await _channel.invokeMethod('isShizukuInstalled');
@@ -158,7 +168,7 @@ class SystemToolsService extends GetxService {
       if (list == null) return [];
       return list.map((e) => e.toString()).toList();
     } catch (e) {
-      return ['Error reading logcat: $e'];
+      return ['Lỗi đọc logcat: $e'];
     }
   }
 
@@ -166,5 +176,76 @@ class SystemToolsService extends GetxService {
     try {
       await _channel.invokeMethod('vibrateDevice', {'durationMs': durationMs});
     } catch (_) {}
+  }
+
+  // --- Hardware Tests (Barometer, Tone, Mic) ---
+  Future<bool> hasBarometerSensor() async {
+    try {
+      final bool? res = await _channel.invokeMethod('hasBarometerSensor');
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<double> getBarometerPressure() async {
+    try {
+      final double? p = await _channel.invokeMethod('getBarometerPressure');
+      return p ?? 0.0;
+    } catch (_) {
+      return 0.0;
+    }
+  }
+
+  Future<void> playTone({double frequency = 165.0, int durationMs = 10000, String channel = 'both'}) async {
+    try {
+      await _channel.invokeMethod('playTone', {
+        'frequency': frequency,
+        'durationMs': durationMs,
+        'channel': channel,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> stopTone() async {
+    try {
+      await _channel.invokeMethod('stopTone');
+    } catch (_) {}
+  }
+
+  Future<String?> startRecordingMic() async {
+    try {
+      final String? path = await _channel.invokeMethod('startRecordingMic');
+      return path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> stopRecordingMic() async {
+    try {
+      final String? path = await _channel.invokeMethod('stopRecordingMic');
+      return path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<int> getMaxMicAmplitude() async {
+    try {
+      final int? amp = await _channel.invokeMethod('getMaxMicAmplitude');
+      return amp ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<bool> playRecordedMic() async {
+    try {
+      final bool? res = await _channel.invokeMethod('playRecordedMic');
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 }

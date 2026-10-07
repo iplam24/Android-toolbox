@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/services/system_tools_service.dart';
 import '../../../data/models/app_package_model.dart';
 
@@ -12,7 +13,11 @@ class ApkController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool includeSystemApps = false.obs;
   final RxString searchQuery = ''.obs;
+  final RxString sourceFilter = 'all'.obs; // 'all', 'sideloaded', 'playstore'
   final RxMap<String, String> iconCache = <String, String>{}.obs;
+
+  int get sideloadedCount => allApps.where((a) => a.isSideloaded).length;
+  int get playStoreCount => allApps.where((a) => a.isFromPlayStore).length;
 
   @override
   void onInit() {
@@ -27,7 +32,7 @@ class ApkController extends GetxController {
       allApps.value = apps;
       _applyFilter();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load apps: $e');
+      Get.snackbar('Lỗi', 'Không thể tải danh sách ứng dụng: $e');
     } finally {
       isLoading.value = false;
     }
@@ -38,21 +43,34 @@ class ApkController extends GetxController {
     loadApps();
   }
 
+  void setSourceFilter(String filter) {
+    sourceFilter.value = filter;
+    _applyFilter();
+  }
+
   void onSearch(String query) {
     searchQuery.value = query;
     _applyFilter();
   }
 
   void _applyFilter() {
-    if (searchQuery.value.trim().isEmpty) {
-      filteredApps.value = allApps;
-    } else {
+    var list = allApps.toList();
+
+    if (sourceFilter.value == 'sideloaded') {
+      list = list.where((app) => app.isSideloaded).toList();
+    } else if (sourceFilter.value == 'playstore') {
+      list = list.where((app) => app.isFromPlayStore).toList();
+    }
+
+    if (searchQuery.value.trim().isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
-      filteredApps.value = allApps.where((app) {
+      list = list.where((app) {
         return app.appName.toLowerCase().contains(q) ||
             app.packageName.toLowerCase().contains(q);
       }).toList();
     }
+
+    filteredApps.value = list;
   }
 
   Future<String?> loadAppIcon(String packageName) async {
@@ -68,27 +86,36 @@ class ApkController extends GetxController {
 
   Future<void> extractApk(AppPackageModel app) async {
     Get.snackbar(
-      'Extracting APK',
-      'Saving ${app.appName} to Downloads...',
+      'Đang trích xuất APK',
+      'Đang lưu ${app.appName} vào thư mục Download...',
       duration: const Duration(seconds: 2),
       showProgressIndicator: true,
+      backgroundColor: AppColors.apkColor.withOpacity(0.9),
+      colorText: Colors.white,
     );
 
     final extractedPath = await systemTools.extractApk(app.packageName);
     if (extractedPath != null) {
       Get.snackbar(
-        'APK Extracted',
-        'Saved to: $extractedPath',
+        'Đã trích xuất APK thành công',
+        'Đã lưu tại: $extractedPath',
+        backgroundColor: const Color(0xFF1E293B),
+        colorText: Colors.white,
         mainButton: TextButton(
           onPressed: () {
-            Share.shareXFiles([XFile(extractedPath)], text: 'Exported APK: ${app.appName}');
+            Share.shareXFiles([XFile(extractedPath)], text: 'Bộ cài đặt APK: ${app.appName}');
           },
-          child: const Text('SHARE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          child: const Text('CHIA SẺ', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
         ),
         duration: const Duration(seconds: 5),
       );
     } else {
-      Get.snackbar('Error', 'Failed to extract APK. Check storage permission.');
+      Get.snackbar(
+        'Lỗi',
+        'Không thể trích xuất APK. Hãy kiểm tra quyền lưu trữ.',
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -124,11 +151,11 @@ class ApkController extends GetxController {
                     width: 54,
                     height: 54,
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: AppColors.apkColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.android_rounded, size: 36, color: Colors.green),
+                    child: const Icon(Icons.android_rounded, size: 36, color: AppColors.apkColor),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -143,9 +170,30 @@ class ApkController extends GetxController {
                           details.packageName,
                           style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
-                        Text(
-                          'v${details.versionName} (${details.versionCode}) • ${details.formattedSize}',
-                          style: const TextStyle(fontSize: 12, color: Colors.blueAccent),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: (details.isFromPlayStore ? Colors.green : Colors.orange).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                details.isFromPlayStore ? '🛍️ Google Play' : '📦 Cài ngoài (APK)',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: details.isFromPlayStore ? Colors.green : Colors.orange,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${details.formattedSize} • v${details.versionName}',
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -155,17 +203,19 @@ class ApkController extends GetxController {
               const SizedBox(height: 20),
               const Divider(),
               const SizedBox(height: 12),
-              _buildDetailRow('Target SDK', '${details.targetSdkVersion}'),
-              _buildDetailRow('Min SDK', '${details.minSdkVersion}'),
-              _buildDetailRow('APK Path', details.apkPath, isPath: true),
-              _buildDetailRow('Granted Permissions', '${details.permissionsGranted.length} permissions'),
+              _buildDetailRow('Nguồn cài đặt', details.installerSource.isNotEmpty ? details.installerSource : 'Không rõ'),
+              _buildDetailRow('SDK Đích (Target SDK)', '${details.targetSdkVersion}'),
+              _buildDetailRow('SDK Tối thiểu (Min SDK)', '${details.minSdkVersion}'),
+              _buildDetailRow('Đường dẫn APK', details.apkPath, isPath: true),
+              _buildDetailRow('Số quyền được cấp', '${details.permissionsGranted.length} quyền'),
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.download_rounded, size: 18),
-                      label: const Text('Extract'),
+                      label: const Text('Trích xuất'),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.apkColor),
                       onPressed: () {
                         Get.back();
                         extractApk(details);
@@ -176,7 +226,7 @@ class ApkController extends GetxController {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.settings_rounded, size: 18),
-                      label: const Text('Settings'),
+                      label: const Text('Cài đặt app'),
                       onPressed: () {
                         systemTools.openAppSettings(details.packageName);
                       },
@@ -185,7 +235,7 @@ class ApkController extends GetxController {
                   const SizedBox(width: 12),
                   IconButton.filledTonal(
                     icon: const Icon(Icons.open_in_new_rounded),
-                    tooltip: 'Launch App',
+                    tooltip: 'Mở ứng dụng',
                     onPressed: () {
                       systemTools.openApp(details.packageName);
                     },
@@ -207,7 +257,7 @@ class ApkController extends GetxController {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 130,
+            width: 140,
             child: Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
           ),
           Expanded(

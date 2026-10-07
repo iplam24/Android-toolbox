@@ -6,6 +6,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFF5AC8FA);
   static const Color primaryDark = Color(0xFF0051A8);
   static const Color accent = Color(0xFF00E5FF); // Electric Cyan
+  static const Color accentLight = Color(0xFF64FFDA);
 
   // Functional Status Colors
   static const Color success = Color(0xFF34C759); // Green

@@ -3,7 +3,25 @@ import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/usage_guide_sheet.dart';
 import '../controllers/file_transfer_controller.dart';
+
+const _fileTransferUsageGuide = UsageGuideData(
+  title: 'Truyền tệp Web nội bộ (Web Share)',
+  description: 'Chia sẻ và nhận tệp tin tốc độ cao giữa điện thoại Android và bất kỳ máy tính PC, laptop hoặc iPhone nào trong cùng mạng Wi-Fi mà hoàn toàn không cần cài đặt phần mềm bên thứ 3 hay cắm dây cáp USB.',
+  steps: [
+    'Đảm bảo điện thoại và máy tính (hoặc thiết bị nhận) đang kết nối CHUNG một mạng Wi-Fi.',
+    'Bật công tắc "MÁY CHỦ HTTP NỘI BỘ" ở phía trên.',
+    'Trên máy tính hoặc iPhone, mở trình duyệt (Chrome, Safari, Edge, Cốc Cốc...) và gõ địa chỉ URL hiển thị (hoặc quét mã QR trên màn hình).',
+    'Gửi tệp từ máy tính sang điện thoại: Kéo thả tệp tin vào khung tải lên trên trình duyệt web.',
+    'Tải tệp từ điện thoại về máy tính: Nhấn nút "Tải về" cạnh tệp bạn muốn lưu trong danh sách tệp.',
+  ],
+  tips: [
+    'Tệp nhận được lưu tự động trong thư mục /sdcard/.../WebShare của máy.',
+    'Tốc độ truyền tải qua mạng nội bộ LAN rất nhanh (thường 20-80 MB/s) và hoàn toàn không tốn lưu lượng 4G/Internet.',
+    'Khi không sử dụng, hãy gạt tắt công tắc để tiết kiệm pin.',
+  ],
+);
 
 class FileTransferView extends GetView<FileTransferController> {
   const FileTransferView({super.key});
@@ -12,13 +30,18 @@ class FileTransferView extends GetView<FileTransferController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Local Web Share',
-        subtitle: 'Browser-to-Phone wireless file transfer',
+        title: 'Truyền tệp Web nội bộ',
+        subtitle: 'Chia sẻ tệp không dây qua trình duyệt Web',
+        usageGuide: _fileTransferUsageGuide,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // Banner Hướng dẫn cách dùng nhanh
+            const UsageGuideBanner(guide: _fileTransferUsageGuide),
+            const SizedBox(height: 8),
+
             // Server Switch Card
             Card(
               child: Padding(
@@ -40,12 +63,12 @@ class FileTransferView extends GetView<FileTransferController> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('LOCAL HTTP SERVER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                              const Text('MÁY CHỦ HTTP NỘI BỘ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                               const SizedBox(height: 4),
                               Obx(() => Text(
-                                controller.webServer.isRunning.value ? 'Server Running' : 'Server Offline',
+                                controller.webServer.isRunning.value ? 'Máy chủ đang hoạt động' : 'Máy chủ đã tắt',
                                 style: TextStyle(
-                                  fontSize: 17,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: controller.webServer.isRunning.value ? AppColors.success : Colors.grey,
                                 ),
@@ -65,7 +88,7 @@ class FileTransferView extends GetView<FileTransferController> {
                         return Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: Text(
-                            'Turn on the server to share and receive files from any PC or phone on the same Wi-Fi without installing apps.',
+                            'Bật công tắc máy chủ để bắt đầu chia sẻ và nhận tệp từ mọi máy tính PC, laptop hoặc iPhone trong cùng mạng Wi-Fi.',
                             style: TextStyle(fontSize: 13, color: Colors.grey.shade400, height: 1.4),
                           ),
                         );
@@ -119,7 +142,7 @@ class FileTransferView extends GetView<FileTransferController> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Open this URL in any browser on PC/iPhone to transfer files',
+                            'Mở địa chỉ này trên trình duyệt web máy tính/iPhone để truyền tệp',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
@@ -143,11 +166,11 @@ class FileTransferView extends GetView<FileTransferController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'RECEIVED FILES',
+                          'TỆP TRÊN ĐIỆN THOẠI',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
                         ),
                         Obx(() => Text(
-                          '${controller.webServer.sharedFilesList.length} files',
+                          '${controller.webServer.sharedFilesList.length} tệp',
                           style: const TextStyle(fontSize: 12, color: AppColors.fileTransferColor, fontWeight: FontWeight.bold),
                         )),
                       ],
@@ -158,7 +181,7 @@ class FileTransferView extends GetView<FileTransferController> {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           child: Center(
-                            child: Text('No files received yet via web share', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                            child: Text('Chưa có tệp nào được tải lên qua Web Share', style: TextStyle(fontSize: 13, color: Colors.grey)),
                           ),
                         );
                       }

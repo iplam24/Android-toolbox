@@ -3,7 +3,24 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/usage_guide_sheet.dart';
 import '../controllers/clipboard_controller.dart';
+
+const _clipboardUsageGuide = UsageGuideData(
+  title: 'Bộ nhớ tạm & Lịch sử sao chép',
+  description: 'Tự động lưu trữ nội dung bạn sao chép (văn bản, link URL, số điện thoại, code...), tránh mất mát dữ liệu quan trọng khi bạn vô tình sao chép nội dung mới đè lên.',
+  steps: [
+    'Mỗi khi bạn sao chép (Copy) văn bản từ bất kỳ ứng dụng nào, mở app và bấm biểu tượng "Đồng bộ" 🔄 trên thanh tiêu đề để lưu ngay vào danh sách.',
+    'Bấm nút (+) "Tạo ghi chú" ở góc dưới màn hình để tự tạo ghi chú hoặc lưu lại thông tin cần nhớ.',
+    'Dùng thanh bộ lọc phía trên (Tất cả, Liên kết, Số điện thoại, Mã lệnh, Văn bản) để tìm lại nhanh nội dung mong muốn.',
+    'Bấm biểu tượng Ghim 📌 để giữ lại các mục quan trọng (các mục này sẽ không bị xóa khi dọn dẹp hàng loạt).',
+    'Bấm "Sao chép" để nạp lại nội dung vào bộ nhớ tạm, hoặc bấm biểu tượng QR để chuyển ngay thành mã QR cho máy khác quét.',
+  ],
+  tips: [
+    'Bấm biểu tượng chổi quét 🧹 trên thanh tiêu đề để dọn sạch các mục chưa ghim, giúp danh sách luôn gọn gàng.',
+    'Dữ liệu được lưu trữ ngoại tuyến hoàn toàn trên điện thoại, đảm bảo an toàn tuyệt đối.',
+  ],
+);
 
 class ClipboardView extends GetView<ClipboardController> {
   const ClipboardView({super.key});
@@ -12,17 +29,18 @@ class ClipboardView extends GetView<ClipboardController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Clipboard Manager',
-        subtitle: 'History, pinned notes & quick actions',
+        title: 'Bộ nhớ tạm',
+        subtitle: 'Lịch sử sao chép, ghim ghi chú & công cụ',
+        usageGuide: _clipboardUsageGuide,
         actions: [
           IconButton(
             icon: const Icon(Icons.sync_rounded),
-            tooltip: 'Sync Clipboard',
+            tooltip: 'Đồng bộ Clipboard',
             onPressed: () => controller.syncClipboard(),
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_rounded),
-            tooltip: 'Clear Unpinned',
+            tooltip: 'Dọn dẹp mục chưa ghim',
             onPressed: () => controller.clearAllUnpinned(),
           ),
         ],
@@ -30,27 +48,30 @@ class ClipboardView extends GetView<ClipboardController> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddClipDialog(context),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Clip'),
+        label: const Text('Tạo ghi chú'),
         backgroundColor: AppColors.clipboardColor,
         foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
+          // Banner Hướng dẫn cách dùng nhanh
+          const UsageGuideBanner(guide: _clipboardUsageGuide),
+
           // Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
-                _buildFilterChip('All', 'all'),
+                _buildFilterChip('Tất cả', 'all'),
                 const SizedBox(width: 8),
-                _buildFilterChip('🔗 URLs', 'url'),
+                _buildFilterChip('🔗 Liên kết', 'url'),
                 const SizedBox(width: 8),
-                _buildFilterChip('📞 Numbers', 'number'),
+                _buildFilterChip('📞 Số điện thoại', 'number'),
                 const SizedBox(width: 8),
-                _buildFilterChip('💻 Code', 'code'),
+                _buildFilterChip('💻 Mã lệnh', 'code'),
                 const SizedBox(width: 8),
-                _buildFilterChip('📝 Text', 'text'),
+                _buildFilterChip('📝 Văn bản', 'text'),
               ],
             ),
           ),
@@ -67,12 +88,12 @@ class ClipboardView extends GetView<ClipboardController> {
                       Icon(Icons.content_paste_off_rounded, size: 64, color: Colors.grey.withOpacity(0.5)),
                       const SizedBox(height: 12),
                       const Text(
-                        'No clipboard history yet',
+                        'Chưa có lịch sử sao chép',
                         style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Copy text anywhere or tap "Sync Clipboard"',
+                        'Sao chép văn bản ở bất kỳ app nào hoặc bấm "Đồng bộ"',
                         style: TextStyle(color: Colors.grey, fontSize: 13),
                       ),
                     ],
@@ -85,7 +106,7 @@ class ClipboardView extends GetView<ClipboardController> {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
                 itemBuilder: (context, index) {
                   final item = items[index];
-                  final formattedDate = DateFormat('MMM d, HH:mm').format(item.timestamp);
+                  final formattedDate = DateFormat('dd/MM, HH:mm').format(item.timestamp);
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 10),
@@ -106,7 +127,7 @@ class ClipboardView extends GetView<ClipboardController> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      item.type.toUpperCase(),
+                                      _getTypeLabel(item.type),
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
@@ -130,17 +151,19 @@ class ClipboardView extends GetView<ClipboardController> {
                                       color: item.isPinned ? AppColors.clipboardColor : Colors.grey,
                                     ),
                                     visualDensity: VisualDensity.compact,
+                                    tooltip: item.isPinned ? 'Bỏ ghim' : 'Ghim ghi chú',
                                     onPressed: () => controller.togglePin(item.id),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.qr_code_2_rounded, size: 18),
                                     visualDensity: VisualDensity.compact,
-                                    tooltip: 'Convert to QR',
+                                    tooltip: 'Chuyển sang mã QR',
                                     onPressed: () => controller.convertToQr(item.content),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
                                     visualDensity: VisualDensity.compact,
+                                    tooltip: 'Xóa',
                                     onPressed: () => controller.deleteClip(item.id),
                                   ),
                                 ],
@@ -157,7 +180,7 @@ class ClipboardView extends GetView<ClipboardController> {
                             alignment: Alignment.centerRight,
                             child: OutlinedButton.icon(
                               icon: const Icon(Icons.copy_rounded, size: 14),
-                              label: const Text('Copy', style: TextStyle(fontSize: 12)),
+                              label: const Text('Sao chép', style: TextStyle(fontSize: 12)),
                               style: OutlinedButton.styleFrom(
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -191,6 +214,19 @@ class ClipboardView extends GetView<ClipboardController> {
     });
   }
 
+  String _getTypeLabel(String type) {
+    switch (type) {
+      case 'url':
+        return 'LIÊN KẾT';
+      case 'number':
+        return 'SỐ';
+      case 'code':
+        return 'MÃ LỆNH';
+      default:
+        return 'VĂN BẢN';
+    }
+  }
+
   Color _getTypeColor(String type) {
     switch (type) {
       case 'url':
@@ -208,23 +244,23 @@ class ClipboardView extends GetView<ClipboardController> {
     final textController = TextEditingController();
     Get.dialog(
       AlertDialog(
-        title: const Text('Create New Clip'),
+        title: const Text('Tạo ghi chú mới'),
         content: TextField(
           controller: textController,
           maxLines: 5,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: 'Enter text, link or notes...',
+            hintText: 'Nhập văn bản, liên kết hoặc nội dung cần nhớ...',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () => controller.addManualClip(textController.text),
-            child: const Text('Save'),
+            child: const Text('Lưu'),
           ),
         ],
       ),

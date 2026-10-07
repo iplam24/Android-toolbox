@@ -7,21 +7,20 @@ class FileTransferController extends GetxController {
 
   final RxInt selectedPort = 8080.obs;
 
-
   Future<void> toggleServer() async {
     if (webServer.isRunning.value) {
       await webServer.stopServer();
-      Get.snackbar('Server Stopped', 'Local Web Share is now offline');
+      Get.snackbar('Đã tắt máy chủ', 'Dịch vụ chia sẻ tệp Web đã ngừng hoạt động');
     } else {
       final success = await webServer.startServer(port: selectedPort.value);
       if (success) {
         Get.snackbar(
-          'Web Server Started',
-          'Access via browser at ${webServer.serverUrl.value}',
+          'Máy chủ đã sẵn sàng',
+          'Truy cập qua trình duyệt máy tính/iPhone tại: ${webServer.serverUrl.value}',
           duration: const Duration(seconds: 4),
         );
       } else {
-        Get.snackbar('Error', 'Failed to start local web server');
+        Get.snackbar('Lỗi', 'Không thể khởi động máy chủ Web nội bộ');
       }
     }
   }
@@ -29,7 +28,7 @@ class FileTransferController extends GetxController {
   void copyUrl() {
     if (webServer.serverUrl.value.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: webServer.serverUrl.value));
-      Get.snackbar('Copied', 'Server URL copied to clipboard');
+      Get.snackbar('Đã sao chép', 'Đã sao chép đường dẫn máy chủ vào bộ nhớ tạm');
     }
   }
 }

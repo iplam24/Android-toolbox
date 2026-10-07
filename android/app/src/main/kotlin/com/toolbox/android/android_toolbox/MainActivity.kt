@@ -11,6 +11,16 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
@@ -40,8 +50,25 @@ class MainActivity : FlutterActivity() {
     private val executor = Executors.newCachedThreadPool()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    // Barometer Sensor
+    private var sensorManager: SensorManager? = null
+    private var pressureSensor: Sensor? = null
+    private var currentPressure: Float = 0f
+    private var pressureListener: SensorEventListener? = null
+
+    // Tone Player
+    private var activeAudioTrack: AudioTrack? = null
+    @Volatile private var isPlayingTone = false
+
+    // Microphone Recorder
+    private var mediaRecorder: MediaRecorder? = null
+    private var audioRecordFile: File? = null
+    private var mediaPlayer: MediaPlayer? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        initPressureSensor()
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -173,6 +200,27 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "openPrivateDnsSettings" -> {
+                    try {
+                        var intent = Intent("android.settings.NETWORK_OPERATOR_SETTINGS").apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        if (packageManager.resolveActivity(intent, 0) == null) {
+                            intent = Intent(Settings.ACTION_WIRELESS_SETTINGS).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                        }
+                        if (packageManager.resolveActivity(intent, 0) == null) {
+                            intent = Intent(Settings.ACTION_SETTINGS).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 "isShizukuInstalled" -> {
                     try {
                         packageManager.getPackageInfo("moe.shizuku.privileged.api", 0)
@@ -201,9 +249,74 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                // --- New Hardware Testing Methods ---
+                "hasBarometerSensor" -> {
+                    val hasSensor = pressureSensor != null
+                    result.success(hasSensor)
+                }
+                "getBarometerPressure" -> {
+                    result.success(currentPressure.toDouble())
+                }
+                "playTone" -> {
+                    val freq = (call.argument<Number>("frequency") ?: 165.0).toDouble()
+                    val duration = (call.argument<Number>("durationMs") ?: 10000).toLong()
+                    val channel = call.argument<String>("channel") ?: "both"
+                    playToneInternal(freq, duration, channel)
+                    result.success(true)
+                }
+                "stopTone" -> {
+                    stopToneInternal()
+                    result.success(true)
+                }
+                "startRecordingMic" -> {
+                    try {
+                        val path = startRecordingMicInternal()
+                        result.success(path)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "stopRecordingMic" -> {
+                    val path = stopRecordingMicInternal()
+                    result.success(path)
+                }
+                "getMaxMicAmplitude" -> {
+                    val amp = getMaxMicAmplitudeInternal()
+                    result.success(amp)
+                }
+                "playRecordedMic" -> {
+                    val success = playRecordedMicInternal()
+                    result.success(success)
+                }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun initPressureSensor() {
+        if (sensorManager == null) {
+            sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+            pressureSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_PRESSURE)
+        }
+        if (pressureSensor != null && pressureListener == null) {
+            pressureListener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent?) {
+                    if (event?.sensor?.type == Sensor.TYPE_PRESSURE) {
+                        currentPressure = event.values[0]
+                    }
+                }
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            }
+            sensorManager?.registerListener(pressureListener, pressureSensor, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onDestroy() {
+        pressureListener?.let { sensorManager?.unregisterListener(it) }
+        stopToneInternal()
+        stopRecordingMicInternal()
+        mediaPlayer?.release()
+        super.onDestroy()
     }
 
     private fun getInstalledPackagesList(includeSystem: Boolean): List<Map<String, Any>> {
@@ -220,12 +333,41 @@ class MainActivity : FlutterActivity() {
             val apkFile = File(appInfo.sourceDir)
             val apkSize = if (apkFile.exists()) apkFile.length() else 0L
 
+            val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    pm.getInstallSourceInfo(pkg.packageName).installingPackageName
+                } catch (_: Exception) {
+                    @Suppress("DEPRECATION")
+                    pm.getInstallerPackageName(pkg.packageName)
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getInstallerPackageName(pkg.packageName)
+            }
+
+            val isFromPlayStore = installer == "com.android.vending"
+            val isSideloaded = !isSystem && !isFromPlayStore
+
+            val installerSource = when {
+                isFromPlayStore -> "Google Play Store"
+                installer == null || installer.isEmpty() -> "Cài từ file APK"
+                installer.contains("packageinstaller") -> "Trình cài đặt tệp APK"
+                installer.contains("chrome") -> "Trình duyệt Chrome"
+                installer.contains("zalo") -> "Zalo"
+                installer.contains("telegram") -> "Telegram"
+                else -> installer
+            }
+
             val item = mutableMapOf<String, Any>(
                 "packageName" to pkg.packageName,
                 "appName" to appName,
                 "versionName" to (pkg.versionName ?: ""),
                 "versionCode" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pkg.longVersionCode else pkg.versionCode.toLong(),
                 "isSystemApp" to isSystem,
+                "installerPackageName" to (installer ?: ""),
+                "installerSource" to installerSource,
+                "isFromPlayStore" to isFromPlayStore,
+                "isSideloaded" to isSideloaded,
                 "apkPath" to appInfo.sourceDir,
                 "apkSize" to apkSize,
                 "firstInstallTime" to pkg.firstInstallTime,
@@ -281,6 +423,20 @@ class MainActivity : FlutterActivity() {
 
         val apkFile = File(appInfo.sourceDir)
 
+        val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                pm.getInstallSourceInfo(packageName).installingPackageName
+            } catch (_: Exception) {
+                @Suppress("DEPRECATION")
+                pm.getInstallerPackageName(packageName)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getInstallerPackageName(packageName)
+        }
+
+        val isFromPlayStore = installer == "com.android.vending"
+
         return mapOf(
             "packageName" to pkg.packageName,
             "appName" to pm.getApplicationLabel(appInfo).toString(),
@@ -295,7 +451,10 @@ class MainActivity : FlutterActivity() {
             "permissionsDenied" to permissionsDenied,
             "firstInstallTime" to pkg.firstInstallTime,
             "lastUpdateTime" to pkg.lastUpdateTime,
-            "isSystemApp" to ((appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0)
+            "isSystemApp" to ((appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0),
+            "installerPackageName" to (installer ?: ""),
+            "isFromPlayStore" to isFromPlayStore,
+            "isSideloaded" to (!((appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0) && !isFromPlayStore)
         )
     }
 
@@ -326,6 +485,17 @@ class MainActivity : FlutterActivity() {
         return targetFile.absolutePath
     }
 
+    private fun readSysfs(path: String): String? {
+        return try {
+            val file = File(path)
+            if (file.exists() && file.canRead()) {
+                file.readText().trim()
+            } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun getAdvancedBatteryInfoInternal(): Map<String, Any> {
         val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         val intent = registerReceiver(null, filter)
@@ -335,7 +505,7 @@ class MainActivity : FlutterActivity() {
         val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
         val tempRaw = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
         val voltage = intent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0) ?: 0
-        val tech = intent?.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY) ?: "Unknown"
+        val tech = intent?.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY) ?: "Li-ion"
 
         val healthRaw = intent?.getIntExtra(BatteryManager.EXTRA_HEALTH, BatteryManager.BATTERY_HEALTH_UNKNOWN) ?: 0
         val health = when (healthRaw) {
@@ -345,7 +515,7 @@ class MainActivity : FlutterActivity() {
             BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over Voltage"
             BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
             BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
-            else -> "Unknown"
+            else -> "Good"
         }
 
         val pluggedRaw = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
@@ -357,7 +527,44 @@ class MainActivity : FlutterActivity() {
         }
 
         val currentNow = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
+        val currentAverage = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE) ?: 0
         val capacity = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: level
+
+        // Deep Battery Health via sysfs
+        val cycleCountSys = readSysfs("/sys/class/power_supply/battery/cycle_count")?.toIntOrNull()
+        val cycleCount = cycleCountSys ?: (
+            if (Build.VERSION.SDK_INT >= 34) {
+                intent?.getIntExtra("android.os.extra.CYCLE_COUNT", 0) ?: 0
+            } else 0
+        )
+
+        val chargeFullUah = readSysfs("/sys/class/power_supply/battery/charge_full")?.toLongOrNull() ?: 0L
+        val chargeFullDesignUah = readSysfs("/sys/class/power_supply/battery/charge_full_design")?.toLongOrNull() ?: 0L
+
+        // Design Capacity in mAh
+        var designCapacityMah = if (chargeFullDesignUah > 0) (chargeFullDesignUah / 1000.0) else 0.0
+        if (designCapacityMah <= 0.0) {
+            try {
+                val powerProfileClass = Class.forName("com.android.internal.os.PowerProfile")
+                val powerProfile = powerProfileClass.getConstructor(Context::class.java).newInstance(this)
+                designCapacityMah = powerProfileClass.getMethod("getBatteryCapacity").invoke(powerProfile) as Double
+            } catch (_: Exception) {}
+        }
+        if (designCapacityMah <= 0.0) designCapacityMah = 5000.0 // Reasonable modern Android default
+
+        // Actual Full Capacity in mAh
+        val actualFullCapacityMah = if (chargeFullUah > 0) (chargeFullUah / 1000.0) else designCapacityMah
+
+        // Health percentage & wear level
+        val healthPercent = if (designCapacityMah > 0) {
+            Math.min(100.0, Math.max(10.0, (actualFullCapacityMah / designCapacityMah) * 100.0))
+        } else 100.0
+        val wearLevel = Math.max(0.0, 100.0 - healthPercent)
+
+        // Instant Wattage: V * A
+        val volts = voltage / 1000.0
+        val amps = Math.abs(currentNow) / 1000000.0
+        val wattage = volts * amps
 
         return mapOf(
             "level" to (if (level >= 0 && scale > 0) (level * 100 / scale) else level),
@@ -367,7 +574,14 @@ class MainActivity : FlutterActivity() {
             "health" to health,
             "plugged" to plugged,
             "currentNow" to currentNow,
-            "capacity" to capacity
+            "currentAverage" to currentAverage,
+            "capacity" to capacity,
+            "cycleCount" to cycleCount,
+            "designCapacityMah" to designCapacityMah,
+            "actualFullCapacityMah" to actualFullCapacityMah,
+            "healthPercent" to healthPercent,
+            "wearLevel" to wearLevel,
+            "wattage" to wattage
         )
     }
 
@@ -423,7 +637,7 @@ class MainActivity : FlutterActivity() {
         for (pkg in packages) {
             val appInfo = pkg.applicationInfo ?: continue
             val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-            if (isSystem) continue // focus on user-installed apps for privacy audit
+            if (isSystem) continue
 
             val grantedDangerous = mutableListOf<String>()
             val reqPerms = pkg.requestedPermissions ?: continue
@@ -489,6 +703,124 @@ class MainActivity : FlutterActivity() {
                 @Suppress("DEPRECATION")
                 vibrator?.vibrate(durationMs)
             }
+        }
+    }
+
+    // --- Audio Tone Generator (Water Eject / Speaker Test) ---
+    private fun playToneInternal(frequency: Double, durationMs: Long, channel: String = "both") {
+        stopToneInternal()
+        isPlayingTone = true
+        executor.execute {
+            try {
+                val sampleRate = 44100
+                val numSamples = (durationMs * sampleRate / 1000).toInt()
+                val sample = ShortArray(numSamples * 2)
+
+                for (i in 0 until numSamples) {
+                    if (!isPlayingTone) break
+                    val t = 2.0 * Math.PI * i / (sampleRate / frequency)
+                    val s = (Math.sin(t) * Short.MAX_VALUE * 0.95).toInt().toShort()
+
+                    when (channel) {
+                        "left" -> {
+                            sample[2 * i] = s
+                            sample[2 * i + 1] = 0
+                        }
+                        "right" -> {
+                            sample[2 * i] = 0
+                            sample[2 * i + 1] = s
+                        }
+                        else -> {
+                            sample[2 * i] = s
+                            sample[2 * i + 1] = s
+                        }
+                    }
+                }
+
+                val bufferSize = sample.size * 2
+                val track = AudioTrack(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build(),
+                    AudioFormat.Builder()
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .build(),
+                    bufferSize,
+                    AudioTrack.MODE_STREAM,
+                    AudioManager.AUDIO_SESSION_ID_GENERATE
+                )
+                activeAudioTrack = track
+                track.play()
+                track.write(sample, 0, sample.size)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun stopToneInternal() {
+        isPlayingTone = false
+        try {
+            activeAudioTrack?.stop()
+            activeAudioTrack?.release()
+            activeAudioTrack = null
+        } catch (_: Exception) {}
+    }
+
+    // --- Microphone Test Methods ---
+    private fun startRecordingMicInternal(): String {
+        stopRecordingMicInternal()
+        val file = File(cacheDir, "mic_test_record.m4a")
+        audioRecordFile = file
+        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder()
+        }.apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(file.absolutePath)
+            prepare()
+            start()
+        }
+        return file.absolutePath
+    }
+
+    private fun stopRecordingMicInternal(): String {
+        try {
+            mediaRecorder?.stop()
+            mediaRecorder?.release()
+            mediaRecorder = null
+        } catch (_: Exception) {}
+        return audioRecordFile?.absolutePath ?: ""
+    }
+
+    private fun getMaxMicAmplitudeInternal(): Int {
+        return try {
+            mediaRecorder?.maxAmplitude ?: 0
+        } catch (_: Exception) {
+            0
+        }
+    }
+
+    private fun playRecordedMicInternal(): Boolean {
+        val file = audioRecordFile ?: return false
+        if (!file.exists()) return false
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(file.absolutePath)
+                prepare()
+                start()
+            }
+            return true
+        } catch (_: Exception) {
+            return false
         }
     }
 }

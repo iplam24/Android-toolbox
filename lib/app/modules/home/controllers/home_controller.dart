@@ -19,6 +19,24 @@ class HomeController extends GetxController {
   final RxBool isShizukuRunning = false.obs;
   final RxInt highRiskAppsCount = 0.obs;
 
+  String get batteryPluggedText {
+    final p = batteryPlugged.value.toLowerCase();
+    if (p.contains('ac')) return 'SẠC AC';
+    if (p.contains('usb')) return 'SẠC USB';
+    if (p.contains('wireless')) return 'SẠC KHÔNG DÂY';
+    if (p.contains('charging')) return 'ĐANG SẠC';
+    if (p.contains('discharging') || p.contains('unplugged')) return 'DÙNG PIN';
+    if (p.contains('full')) return 'PIN ĐẦY';
+    return 'DÙNG PIN';
+  }
+
+  String get localIpText {
+    if (localIp.value == 'Offline' || localIp.value == '127.0.0.1') {
+      return 'Ngoại tuyến';
+    }
+    return localIp.value;
+  }
+
   Timer? _refreshTimer;
 
   @override

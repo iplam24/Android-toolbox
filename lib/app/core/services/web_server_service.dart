@@ -80,7 +80,7 @@ class WebServerService extends GetxService {
             'content-length': length.toString(),
           });
         }
-        return Response.notFound('File not found');
+        return Response.notFound('Không tìm thấy tệp tin');
       });
 
       // File upload handler
@@ -105,7 +105,7 @@ class WebServerService extends GetxService {
 
       final handler = const Pipeline()
           .addMiddleware(logRequests())
-          .addHandler(router);
+          .addHandler(router.call);
 
       _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
       isRunning.value = true;
@@ -149,11 +149,11 @@ class WebServerService extends GetxService {
   String _generateWebPortalHtml() {
     return '''
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Android Toolbox • Local Web Share</title>
+  <title>Hộp Công Cụ Android • Chia sẻ tệp Web</title>
   <style>
     :root {
       --primary: #007AFF;
@@ -259,15 +259,15 @@ class WebServerService extends GetxService {
 <body>
   <div class="container">
     <div class="header">
-      <h1 class="title">⚡ Android Toolbox Web Share</h1>
-      <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Instant Wireless Transfer between Android & Browser</p>
+      <h1 class="title">⚡ Chia sẻ tệp Web nội bộ</h1>
+      <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Truyền tệp tức thì qua mạng Wi-Fi giữa Điện thoại và Máy tính</p>
     </div>
 
     <div class="card">
-      <h3 style="margin-top: 0;">📤 Upload File to Phone</h3>
+      <h3 style="margin-top: 0;">📤 Tải tệp lên điện thoại</h3>
       <div class="upload-zone" onclick="document.getElementById('fileUpload').click()">
-        <p style="margin: 0; font-size: 16px; font-weight: 600;">Drag & drop files or click to choose</p>
-        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">Any files will be saved directly to the device</p>
+        <p style="margin: 0; font-size: 16px; font-weight: 600;">Kéo thả tệp vào đây hoặc bấm để chọn tệp</p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">Tệp sẽ được lưu trực tiếp vào thư mục WebShare của điện thoại</p>
         <input type="file" id="fileUpload" class="file-input" onchange="uploadSelectedFile(this.files[0])">
       </div>
       <p id="uploadStatus" class="status-text"></p>
@@ -275,11 +275,11 @@ class WebServerService extends GetxService {
 
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0;">📥 Shared Files on Phone</h3>
-        <button class="btn" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="location.reload()">Refresh</button>
+        <h3 style="margin: 0;">📥 Tệp có sẵn trên điện thoại</h3>
+        <button class="btn" style="margin: 0; padding: 6px 12px; font-size: 12px;" onclick="location.reload()">Làm mới</button>
       </div>
       <ul class="file-list" id="fileListContainer">
-        ${sharedFilesList.isEmpty ? '<li style="color: var(--text-muted); padding: 16px; text-align: center;">No files uploaded yet.</li>' : sharedFilesList.map((f) => '<li class="file-item"><span>📄 ' + f + '</span><a class="download-link" href="/download/' + Uri.encodeComponent(f) + '">Download</a></li>').join('')}
+        ${sharedFilesList.isEmpty ? '<li style="color: var(--text-muted); padding: 16px; text-align: center;">Chưa có tệp nào được tải lên.</li>' : sharedFilesList.map((f) => '<li class="file-item"><span>📄 $f</span><a class="download-link" href="/download/${Uri.encodeComponent(f)}">Tải về</a></li>').join('')}
       </ul>
     </div>
   </div>
@@ -288,20 +288,20 @@ class WebServerService extends GetxService {
     async function uploadSelectedFile(file) {
       if (!file) return;
       const statusEl = document.getElementById('uploadStatus');
-      statusEl.textContent = 'Uploading ' + file.name + '...';
+      statusEl.textContent = 'Đang tải lên ' + file.name + '...';
       try {
         const response = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
           method: 'POST',
           body: file
         });
         if (response.ok) {
-          statusEl.textContent = '✅ ' + file.name + ' uploaded successfully!';
+          statusEl.textContent = '✅ Đã tải lên ' + file.name + ' thành công!';
           setTimeout(() => location.reload(), 1000);
         } else {
-          statusEl.textContent = '❌ Upload failed!';
+          statusEl.textContent = '❌ Tải lên thất bại!';
         }
       } catch (err) {
-        statusEl.textContent = '❌ Error: ' + err.message;
+        statusEl.textContent = '❌ Lỗi: ' + err.message;
       }
     }
   </script>

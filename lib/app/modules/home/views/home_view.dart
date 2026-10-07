@@ -55,19 +55,19 @@ class HomeView extends GetView<HomeController> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'ANDROID TOOLBOX',
+                                  'HỘP CÔNG CỤ ANDROID',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w900,
                                     color: textPrimary,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Swiss-knife system utilities',
+                                  'Tiện ích hệ thống đa năng',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -97,14 +97,14 @@ class HomeView extends GetView<HomeController> {
                         _buildHeaderIconButton(
                           context,
                           icon: Icons.qr_code_scanner_rounded,
-                          tooltip: 'Quét QR',
+                          tooltip: 'Quét & Tạo QR',
                           onTap: () => Get.toNamed(AppRoutes.QR),
                         ),
                         const SizedBox(width: 8),
                         _buildHeaderIconButton(
                           context,
                           icon: Icons.settings_rounded,
-                          tooltip: 'Cài đặt',
+                          tooltip: 'Cài đặt hệ thống',
                           onTap: () => Get.toNamed(AppRoutes.SETTINGS),
                         ),
                       ],
@@ -158,7 +158,7 @@ class HomeView extends GetView<HomeController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'SYSTEM STATUS • READY',
+                              'TRẠNG THÁI HỆ THỐNG • HOẠT ĐỘNG',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
@@ -168,7 +168,7 @@ class HomeView extends GetView<HomeController> {
                             ),
                             const SizedBox(height: 4),
                             Obx(() => Text(
-                              '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C • ${controller.localIp.value}',
+                              '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C • ${controller.localIpText}',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -180,6 +180,7 @@ class HomeView extends GetView<HomeController> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh_rounded, size: 20),
+                        tooltip: 'Làm mới thông số',
                         onPressed: () => controller.refreshQuickStats(),
                       ),
                     ],
@@ -199,81 +200,81 @@ class HomeView extends GetView<HomeController> {
                   childAspectRatio: 0.95,
                 ),
                 delegate: SliverChildListDelegate([
-                  // 1. 📦 APK Manager
+                  // 1. 📦 Quản lý APK
                   Obx(() => BentoCard(
-                    title: 'APK Manager',
-                    subtitle: '${controller.installedAppsCount.value} Installed',
-                    badge: 'EXTRACT',
+                    title: 'Quản lý APK',
+                    subtitle: '${controller.installedAppsCount.value} ứng dụng',
+                    badge: 'TRÍCH XUẤT',
                     icon: Icons.inventory_2_rounded,
                     accentColor: AppColors.apkColor,
                     onTap: () => Get.toNamed(AppRoutes.APK),
                   )),
 
-                  // 2. 📋 Clipboard
+                  // 2. 📋 Bộ nhớ tạm
                   Obx(() => BentoCard(
-                    title: 'Clipboard',
-                    subtitle: '${controller.clipboardService.items.length} Clips Saved',
-                    badge: 'HISTORY',
+                    title: 'Bộ nhớ tạm',
+                    subtitle: '${controller.clipboardService.items.length} mục đã lưu',
+                    badge: 'LỊCH SỬ',
                     icon: Icons.content_paste_rounded,
                     accentColor: AppColors.clipboardColor,
                     onTap: () => Get.toNamed(AppRoutes.CLIPBOARD),
                   )),
 
-                  // 3. 📡 Network
+                  // 3. 📡 Mạng & Ping
                   Obx(() => BentoCard(
-                    title: 'Network',
-                    subtitle: controller.localIp.value,
-                    badge: 'PING/SCAN',
+                    title: 'Mạng & Ping',
+                    subtitle: controller.localIpText,
+                    badge: 'PING / QUÉT',
                     icon: Icons.wifi_tethering_rounded,
                     accentColor: AppColors.networkColor,
                     onTap: () => Get.toNamed(AppRoutes.NETWORK),
                   )),
 
-                  // 4. 🔋 Battery
+                  // 4. 🔋 Pin & Nguồn
                   Obx(() => BentoCard(
-                    title: 'Battery',
-                    subtitle: '${controller.batteryLevel.value}% • ${controller.batteryTemp.value}°C',
-                    badge: controller.batteryPlugged.value.toUpperCase(),
+                    title: 'Pin & Nguồn',
+                    subtitle: '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C',
+                    badge: controller.batteryPluggedText,
                     icon: Icons.battery_charging_full_rounded,
                     accentColor: AppColors.batteryColor,
                     onTap: () => Get.toNamed(AppRoutes.BATTERY),
                   )),
 
-                  // 5. 📁 File Transfer
+                  // 5. 📁 Truyền tệp Web
                   Obx(() => BentoCard(
-                    title: 'File Transfer',
-                    subtitle: controller.webServer.isRunning.value ? 'Server Active' : 'Web Share Ready',
-                    badge: controller.webServer.isRunning.value ? 'ONLINE' : 'HTTP',
+                    title: 'Truyền tệp Web',
+                    subtitle: controller.webServer.isRunning.value ? 'Đang phát sóng' : 'Sẵn sàng chia sẻ',
+                    badge: controller.webServer.isRunning.value ? 'TRỰC TUYẾN' : 'HTTP LAN',
                     icon: Icons.folder_shared_rounded,
                     accentColor: AppColors.fileTransferColor,
                     onTap: () => Get.toNamed(AppRoutes.FILE_TRANSFER),
                   )),
 
-                  // 6. 🔐 Privacy & Perms
+                  // 6. 🔐 Quyền riêng tư
                   Obx(() => BentoCard(
-                    title: 'Privacy',
-                    subtitle: '${controller.highRiskAppsCount.value} High Risk Apps',
-                    badge: 'AUDIT',
+                    title: 'Quyền riêng tư',
+                    subtitle: '${controller.highRiskAppsCount.value} app rủi ro',
+                    badge: 'KIỂM TOÁN',
                     icon: Icons.security_rounded,
                     accentColor: AppColors.privacyColor,
                     onTap: () => Get.toNamed(AppRoutes.PRIVACY),
                   )),
 
-                  // 7. ⚙️ ADB & Dev
+                  // 7. ⚙️ Công cụ ADB
                   Obx(() => BentoCard(
-                    title: 'ADB & Dev',
-                    subtitle: controller.isShizukuRunning.value ? 'Shizuku Ready' : 'Wireless ADB',
+                    title: 'Công cụ ADB',
+                    subtitle: controller.isShizukuRunning.value ? 'Shizuku sẵn sàng' : 'Không dây & Lệnh',
                     badge: 'LOGCAT',
                     icon: Icons.terminal_rounded,
                     accentColor: AppColors.adbColor,
                     onTap: () => Get.toNamed(AppRoutes.ADB),
                   )),
 
-                  // 8. 🛠 Tools & Sensors
+                  // 8. 🛠 Cảm biến & Máy
                   BentoCard(
-                    title: 'Device Tools',
-                    subtitle: 'Sensors & Screen',
-                    badge: 'TEST',
+                    title: 'Cảm biến & Máy',
+                    subtitle: 'Kiểm tra phần cứng',
+                    badge: 'KIỂM TRA',
                     icon: Icons.hardware_rounded,
                     accentColor: AppColors.toolsColor,
                     onTap: () => Get.toNamed(AppRoutes.DEVICE_INFO),

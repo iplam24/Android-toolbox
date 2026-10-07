@@ -40,7 +40,7 @@ class ClipboardController extends GetxController {
     if (text.trim().isNotEmpty) {
       clipboardService.addClip(text.trim());
       Get.back();
-      Get.snackbar('Clip Saved', 'Added to clipboard history');
+      Get.snackbar('Đã lưu ghi chú', 'Đã thêm vào lịch sử bộ nhớ tạm');
     }
   }
 
@@ -48,7 +48,7 @@ class ClipboardController extends GetxController {
     clipboardService.copyToClipboard(item.content);
     systemTools.vibrate(durationMs: 50);
     Get.snackbar(
-      'Copied to Clipboard',
+      'Đã sao chép vào bộ nhớ tạm',
       item.content.length > 50 ? '${item.content.substring(0, 50)}...' : item.content,
       duration: const Duration(seconds: 2),
     );
@@ -64,7 +64,7 @@ class ClipboardController extends GetxController {
 
   void clearAllUnpinned() {
     clipboardService.clearUnpinned();
-    Get.snackbar('Cleared', 'Unpinned clips removed');
+    Get.snackbar('Đã dọn dẹp', 'Đã xóa các mục chưa ghim khỏi lịch sử');
   }
 
   void convertToQr(String content) {

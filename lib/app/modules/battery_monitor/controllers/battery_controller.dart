@@ -31,4 +31,30 @@ class BatteryController extends GetxController {
     }
     isLoading.value = false;
   }
+
+  String get pluggedText {
+    final b = batteryInfo.value;
+    if (b == null) return 'Không rõ';
+    final p = b.plugged.toLowerCase();
+    if (p.contains('ac')) return 'SẠC AC (CỦ SẠC)';
+    if (p.contains('usb')) return 'SẠC USB (MÁY TÍNH)';
+    if (p.contains('wireless')) return 'SẠC KHÔNG DÂY';
+    if (p.contains('charging')) return 'ĐANG SẠC';
+    if (p.contains('discharging') || p.contains('unplugged')) return 'ĐANG DÙNG PIN';
+    if (p.contains('full')) return 'PIN ĐẦY';
+    return b.plugged.toUpperCase();
+  }
+
+  String get healthText {
+    final b = batteryInfo.value;
+    if (b == null) return 'Tốt';
+    final h = b.health.toLowerCase();
+    if (h.contains('good')) return 'Tốt';
+    if (h.contains('overheat')) return 'Quá nhiệt';
+    if (h.contains('dead')) return 'Hỏng cell';
+    if (h.contains('over_voltage')) return 'Quá điện áp';
+    if (h.contains('unspecified_failure')) return 'Lỗi nguồn';
+    if (h.contains('cold')) return 'Quá lạnh';
+    return b.health;
+  }
 }

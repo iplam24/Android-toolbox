@@ -117,12 +117,12 @@ class _ScreenColorTestViewState extends State<ScreenColorTestView> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Tap screen to cycle color (${currentIndex + 1}/${colors.length})',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  'Chạm màn hình để đổi màu (${currentIndex + 1}/${colors.length}) • Lần cuối để thoát',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ),
             ),

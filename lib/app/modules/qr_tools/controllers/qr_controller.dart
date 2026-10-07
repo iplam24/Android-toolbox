@@ -14,10 +14,10 @@ class QrController extends GetxController {
   final RxBool isScanning = true.obs;
 
   // Generator inputs
-  final RxString qrType = 'text'.obs; // text, url, wifi
-  final RxString qrContent = 'https://androidtoolbox.dev'.obs;
+  final RxString qrType = 'text'.obs; // text, wifi
+  final RxString qrContent = 'https://github.com/iplam24/Android-toolbox'.obs;
 
-  final textInputController = TextEditingController(text: 'https://androidtoolbox.dev');
+  final textInputController = TextEditingController(text: 'https://github.com/iplam24/Android-toolbox');
   final wifiSsidController = TextEditingController();
   final wifiPassController = TextEditingController();
   final RxString wifiSecurity = 'WPA'.obs; // WPA, WEP, nopass
@@ -68,7 +68,7 @@ class QrController extends GetxController {
     final sec = wifiSecurity.value;
 
     if (ssid.isEmpty) {
-      Get.snackbar('Input Error', 'Please enter Wi-Fi SSID');
+      Get.snackbar('Lỗi nhập liệu', 'Vui lòng nhập tên mạng Wi-Fi (SSID)');
       return;
     }
 
@@ -88,7 +88,7 @@ class QrController extends GetxController {
           children: [
             Icon(Icons.qr_code_scanner_rounded, color: Colors.teal),
             SizedBox(width: 8),
-            Text('QR Code Scanned'),
+            Text('Kết quả quét mã QR'),
           ],
         ),
         content: Column(
@@ -107,16 +107,16 @@ class QrController extends GetxController {
               Get.back();
               restartScanning();
             },
-            child: const Text('Scan Again'),
+            child: const Text('Quét lại'),
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.copy_rounded, size: 16),
-            label: const Text('Copy'),
+            label: const Text('Sao chép'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: result));
               Get.back();
               restartScanning();
-              Get.snackbar('Copied', 'Copied QR content to clipboard');
+              Get.snackbar('Đã sao chép', 'Đã lưu nội dung mã QR vào bộ nhớ tạm');
             },
           ),
         ],

@@ -3,7 +3,25 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/usage_guide_sheet.dart';
 import '../controllers/adb_controller.dart';
+
+const _adbUsageGuide = UsageGuideData(
+  title: 'Trung tâm ADB & Nhà phát triển',
+  description: 'Mở nhanh các cài đặt chuyên sâu của hệ thống, hướng dẫn ghép nối ADB không dây (Wireless Debugging) không cần dây cáp và theo dõi nhật ký hệ thống (Logcat) trực tiếp trên điện thoại.',
+  steps: [
+    'Bấm "Tùy chọn nhà phát triển" để mở ngay menu cài đặt chuyên sâu của Android.',
+    'Bấm "Gỡ lỗi Wi-Fi" để mở cài đặt Wireless Debugging (yêu cầu Android 11 trở lên).',
+    'Ghép nối không dây: Trên điện thoại chọn "Ghép nối bằng mã ghép nối", ghi lại IP, Cổng (Port) và mã PIN 6 số.',
+    'Trên terminal máy tính, chạy lệnh:\n  adb pair <IP>:<PORT> <PIN>\n  adb connect <IP>:<PORT_GỠ_LỖI>',
+    'Theo dõi nhật ký: Nhập từ khóa (VD: Crash, Error, Fatal, tên package) vào ô lọc để tìm logcat thời gian thực.',
+    'Bấm biểu tượng Sao chép ở góc phải thanh tiêu đề để copy toàn bộ nhật ký logcat gửi hỗ trợ kỹ thuật.',
+  ],
+  tips: [
+    'Sau khi ghép nối thành công, bạn có thể cài đặt APK, gỡ lỗi và chạy lệnh shell qua Wi-Fi cực kỳ thuận tiện.',
+    'Hệ thống tự động phát hiện dịch vụ Shizuku để biết máy đã sẵn sàng cấp quyền nâng cao hay chưa.',
+  ],
+);
 
 class AdbView extends GetView<AdbController> {
   const AdbView({super.key});
@@ -12,17 +30,18 @@ class AdbView extends GetView<AdbController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'ADB & Developer Hub',
-        subtitle: 'Wireless pairing, Shizuku & logcat viewer',
+        title: 'Công cụ ADB & Dev',
+        subtitle: 'Ghép nối không dây, Shizuku & trình xem Logcat',
+        usageGuide: _adbUsageGuide,
         actions: [
           IconButton(
             icon: const Icon(Icons.copy_rounded),
-            tooltip: 'Copy Logcat',
+            tooltip: 'Sao chép Logcat',
             onPressed: () => controller.copyLogs(),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Logs',
+            tooltip: 'Làm mới Logcat',
             onPressed: () => controller.fetchLogcat(),
           ),
         ],
@@ -32,6 +51,10 @@ class AdbView extends GetView<AdbController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Banner Hướng dẫn cách dùng nhanh
+            const UsageGuideBanner(guide: _adbUsageGuide),
+            const SizedBox(height: 8),
+
             // Quick Shortcuts Grid
             Card(
               child: Padding(
@@ -43,7 +66,7 @@ class AdbView extends GetView<AdbController> {
                         Expanded(
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.developer_mode_rounded, size: 18),
-                            label: const Text('Dev Options', style: TextStyle(fontSize: 13)),
+                            label: const Text('Tùy chọn Dev', style: TextStyle(fontSize: 13)),
                             style: ElevatedButton.styleFrom(backgroundColor: AppColors.adbColor),
                             onPressed: () => controller.openDevSettings(),
                           ),
@@ -52,7 +75,7 @@ class AdbView extends GetView<AdbController> {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.wifi_tethering_rounded, size: 18),
-                            label: const Text('Wireless ADB', style: TextStyle(fontSize: 13)),
+                            label: const Text('Gỡ lỗi Wi-Fi', style: TextStyle(fontSize: 13)),
                             onPressed: () => controller.openWirelessDebugging(),
                           ),
                         ),
@@ -68,7 +91,7 @@ class AdbView extends GetView<AdbController> {
                           children: [
                             Icon(Icons.shield_outlined, size: 20, color: Colors.blueAccent),
                             SizedBox(width: 8),
-                            Text('Shizuku Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text('Trạng thái Shizuku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           ],
                         ),
                         Obx(() => Container(
@@ -78,7 +101,7 @@ class AdbView extends GetView<AdbController> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            controller.isShizukuInstalled.value ? 'INSTALLED / DETECTED' : 'NOT INSTALLED',
+                            controller.isShizukuInstalled.value ? 'ĐÃ CÀI ĐẶT / SẴN SÀNG' : 'CHƯA CÀI ĐẶT',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -99,21 +122,21 @@ class AdbView extends GetView<AdbController> {
               child: ExpansionTile(
                 initiallyExpanded: false,
                 leading: const Icon(Icons.help_outline_rounded, color: AppColors.adbColor),
-                title: const Text('Wireless ADB Pairing Guide', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                title: const Text('Hướng dẫn kết nối ADB không dây', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 children: const [
                   Padding(
                     padding: EdgeInsets.fromLTRB(18, 0, 18, 18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('1. Go to Developer Options -> enable "Wireless debugging".'),
+                        Text('1. Mở Cài đặt cho nhà phát triển -> Bật "Gỡ lỗi không dây" (Wireless debugging).'),
                         SizedBox(height: 6),
-                        Text('2. Tap "Pair device with pairing code". Note the IP, Port & 6-digit Wi-Fi PIN.'),
+                        Text('2. Nhấn "Ghép nối thiết bị bằng mã ghép nối". Lấy địa chỉ IP, Cổng và mã PIN 6 số.'),
                         SizedBox(height: 6),
-                        Text('3. On your PC terminal, run:'),
+                        Text('3. Trên cửa sổ lệnh terminal của máy tính (cùng mạng Wi-Fi), chạy:'),
                         SizedBox(height: 4),
                         SelectableText(
-                          'adb pair <IP>:<PORT> <PIN>\nadb connect <IP>:<DEBUG_PORT>',
+                          'adb pair <IP>:<PORT> <PIN>\nadb connect <IP>:<PORT_DEBUG>',
                           style: TextStyle(fontFamily: 'monospace', color: Colors.cyanAccent, fontSize: 12),
                         ),
                       ],
@@ -125,7 +148,7 @@ class AdbView extends GetView<AdbController> {
             const SizedBox(height: 24),
 
             // Live Logcat Terminal Card
-            const SectionHeader(title: '📜 System Logcat Viewer'),
+            const SectionHeader(title: '📜 Nhật ký hệ thống (Logcat Viewer)'),
             Card(
               color: Colors.black.withOpacity(0.4),
               child: Padding(
@@ -134,7 +157,7 @@ class AdbView extends GetView<AdbController> {
                   children: [
                     TextField(
                       decoration: const InputDecoration(
-                        hintText: 'Filter logcat (e.g. Activity, Error, Fatal)...',
+                        hintText: 'Lọc logcat (VD: Activity, Error, Crash, Fatal)...',
                         prefixIcon: Icon(Icons.filter_list_rounded),
                         isDense: true,
                       ),
@@ -149,7 +172,7 @@ class AdbView extends GetView<AdbController> {
                         }
                         final logs = controller.filteredLogs;
                         if (logs.isEmpty) {
-                          return const Center(child: Text('No log output or filtered out', style: TextStyle(color: Colors.grey)));
+                          return const Center(child: Text('Không có nhật ký nào hoặc đã bị lọc hết', style: TextStyle(color: Colors.grey)));
                         }
                         return ListView.builder(
                           itemCount: logs.length,
@@ -160,9 +183,8 @@ class AdbView extends GetView<AdbController> {
                               line,
                               style: TextStyle(
                                 fontFamily: 'monospace',
-                                fontSize: 10,
-                                height: 1.3,
-                                color: isError ? Colors.redAccent : Colors.white70,
+                                fontSize: 11,
+                                color: isError ? Colors.redAccent : Colors.greenAccent,
                               ),
                             );
                           },

@@ -4,7 +4,23 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/usage_guide_sheet.dart';
 import '../controllers/qr_controller.dart';
+
+const _qrUsageGuide = UsageGuideData(
+  title: 'Quét & Tạo mã QR, Mã vạch',
+  description: 'Quét nhanh mọi loại mã QR và mã vạch (Barcode) qua camera, đồng thời hỗ trợ tạo mã QR văn bản, đường dẫn website hoặc mã QR chia sẻ Wi-Fi tiện lợi.',
+  steps: [
+    'Tab "Quét mã": Hướng camera về phía mã QR hoặc mã vạch. Nhấn nút ⚡ để bật đèn flash trợ sáng khi ở nơi tối, hoặc nút 🔄 để đổi sang camera trước.',
+    'Khi quét thành công, máy sẽ rung phản hồi và hiển thị nội dung để bạn Sao chép hoặc Quét tiếp.',
+    'Tab "Tạo mã": Chọn kiểu mã "Văn bản / Link" hoặc "Mã QR Wi-Fi".',
+    'Tạo mã QR Wi-Fi: Nhập tên Wi-Fi (SSID) và Mật khẩu rồi bấm "Tạo mã QR Wi-Fi". Người khác chỉ cần quét mã là máy sẽ tự động kết nối Wi-Fi mà không cần nhập mật khẩu.',
+  ],
+  tips: [
+    'Mã QR Wi-Fi chuẩn quốc tế, hoạt động mượt mà trên cả Android và iPhone (iOS).',
+    'Bạn có thể chụp ảnh màn hình mã QR Wi-Fi vừa tạo để in ra dán trong phòng khách hoặc cửa hàng.',
+  ],
+);
 
 class QrView extends GetView<QrController> {
   const QrView({super.key});
@@ -15,8 +31,9 @@ class QrView extends GetView<QrController> {
       length: 2,
       child: Scaffold(
         appBar: CustomAppBar(
-          title: 'QR & Barcode Studio',
-          subtitle: 'Scan codes & generate custom QR',
+          title: 'Quét & Tạo mã QR',
+          subtitle: 'Quét mã vạch & tạo mã QR tùy chỉnh',
+          usageGuide: _qrUsageGuide,
         ),
         body: Column(
           children: [
@@ -28,8 +45,8 @@ class QrView extends GetView<QrController> {
                 unselectedLabelColor: Colors.grey,
                 indicatorWeight: 3,
                 tabs: [
-                  Tab(icon: Icon(Icons.qr_code_scanner_rounded), text: 'Scanner'),
-                  Tab(icon: Icon(Icons.qr_code_rounded), text: 'Generator'),
+                  Tab(icon: Icon(Icons.qr_code_scanner_rounded), text: 'Quét mã'),
+                  Tab(icon: Icon(Icons.qr_code_rounded), text: 'Tạo mã QR'),
                 ],
               ),
             ),
@@ -72,6 +89,13 @@ class QrView extends GetView<QrController> {
             ),
           ),
         ),
+        // Tip banner top
+        const Positioned(
+          top: 12,
+          left: 0,
+          right: 0,
+          child: UsageGuideBanner(guide: _qrUsageGuide),
+        ),
         // Controls at bottom
         Positioned(
           bottom: 40,
@@ -82,11 +106,13 @@ class QrView extends GetView<QrController> {
             children: [
               IconButton.filledTonal(
                 icon: const Icon(Icons.flash_on_rounded),
+                tooltip: 'Bật/Tắt đèn Flash',
                 onPressed: () => controller.scannerController.toggleTorch(),
               ),
               const SizedBox(width: 24),
               IconButton.filledTonal(
                 icon: const Icon(Icons.flip_camera_android_rounded),
+                tooltip: 'Đổi camera',
                 onPressed: () => controller.scannerController.switchCamera(),
               ),
             ],
@@ -101,6 +127,10 @@ class QrView extends GetView<QrController> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          // Banner Hướng dẫn cách dùng nhanh
+          const UsageGuideBanner(guide: _qrUsageGuide),
+          const SizedBox(height: 8),
+
           // QR Code Preview Card
           Card(
             child: Padding(
@@ -138,7 +168,7 @@ class QrView extends GetView<QrController> {
             children: [
               Expanded(
                 child: Obx(() => ChoiceChip(
-                  label: const Center(child: Text('Text / URL')),
+                  label: const Center(child: Text('Văn bản / Link')),
                   selected: controller.qrType.value == 'text',
                   onSelected: (val) {
                     if (val) controller.qrType.value = 'text';
@@ -148,7 +178,7 @@ class QrView extends GetView<QrController> {
               const SizedBox(width: 12),
               Expanded(
                 child: Obx(() => ChoiceChip(
-                  label: const Center(child: Text('Wi-Fi QR')),
+                  label: const Center(child: Text('Mã QR Wi-Fi')),
                   selected: controller.qrType.value == 'wifi',
                   onSelected: (val) {
                     if (val) controller.qrType.value = 'wifi';
@@ -167,7 +197,7 @@ class QrView extends GetView<QrController> {
                   TextField(
                     controller: controller.wifiSsidController,
                     decoration: const InputDecoration(
-                      labelText: 'Wi-Fi Network Name (SSID)',
+                      labelText: 'Tên mạng Wi-Fi (SSID)',
                       prefixIcon: Icon(Icons.wifi_rounded),
                     ),
                   ),
@@ -175,14 +205,14 @@ class QrView extends GetView<QrController> {
                   TextField(
                     controller: controller.wifiPassController,
                     decoration: const InputDecoration(
-                      labelText: 'Wi-Fi Password',
+                      labelText: 'Mật khẩu Wi-Fi',
                       prefixIcon: Icon(Icons.password_rounded),
                     ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.qr_code_rounded),
-                    label: const Text('Generate Wi-Fi QR'),
+                    label: const Text('Tạo mã QR Wi-Fi'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.qrColor,
                       minimumSize: const Size.fromHeight(48),
@@ -200,7 +230,7 @@ class QrView extends GetView<QrController> {
                   maxLines: 3,
                   onChanged: (val) => controller.updateTextQr(val),
                   decoration: const InputDecoration(
-                    labelText: 'Text, Website URL, or Message',
+                    labelText: 'Nội dung văn bản, đường dẫn website hoặc tin nhắn',
                     prefixIcon: Icon(Icons.edit_note_rounded),
                   ),
                 ),
