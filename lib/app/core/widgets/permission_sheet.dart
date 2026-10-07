@@ -118,6 +118,7 @@ class PermissionSheet {
                       Permission.camera,
                       Permission.notification,
                       Permission.storage,
+                      Permission.manageExternalStorage,
                     ].request();
                     Get.snackbar(
                       'Đã cập nhật quyền',

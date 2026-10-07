@@ -5,6 +5,8 @@ class BatteryInfoModel {
   final String technology;
   final String health;
   final String plugged;
+  final String status;
+  final bool isCharging;
   final int currentNow;
   final int currentAverage;
   final int capacity;
@@ -21,6 +23,8 @@ class BatteryInfoModel {
     required this.technology,
     required this.health,
     required this.plugged,
+    this.status = 'Discharging',
+    this.isCharging = false,
     required this.currentNow,
     this.currentAverage = 0,
     required this.capacity,
@@ -32,13 +36,27 @@ class BatteryInfoModel {
   });
 
   factory BatteryInfoModel.fromMap(Map<dynamic, dynamic> map) {
+    final status = map['status']?.toString() ?? 'Discharging';
+    final plugged = map['plugged']?.toString() ?? 'Unplugged';
+
+    final bool charging = (map['isCharging'] as bool?) ??
+        (status.toLowerCase() == 'charging' ||
+            (status.toLowerCase() == 'full' &&
+                plugged.toLowerCase() != 'unplugged' &&
+                plugged.toLowerCase() != 'discharging') ||
+            (plugged.toLowerCase().contains('ac') ||
+                plugged.toLowerCase().contains('usb') ||
+                plugged.toLowerCase().contains('wireless')));
+
     return BatteryInfoModel(
       level: (map['level'] as num?)?.toInt() ?? 0,
       temperature: (map['temperature'] as num?)?.toDouble() ?? 0.0,
       voltage: (map['voltage'] as num?)?.toInt() ?? 0,
       technology: map['technology']?.toString() ?? 'Li-ion',
       health: map['health']?.toString() ?? 'Good',
-      plugged: map['plugged']?.toString() ?? 'Discharging',
+      status: status,
+      isCharging: charging,
+      plugged: plugged,
       currentNow: (map['currentNow'] as num?)?.toInt() ?? 0,
       currentAverage: (map['currentAverage'] as num?)?.toInt() ?? 0,
       capacity: (map['capacity'] as num?)?.toInt() ?? 0,
@@ -49,8 +67,6 @@ class BatteryInfoModel {
       wearLevel: (map['wearLevel'] as num?)?.toDouble() ?? 0.0,
     );
   }
-
-  bool get isCharging => plugged != 'Discharging';
 
   double get currentMa => (currentNow.abs() / 1000.0);
 

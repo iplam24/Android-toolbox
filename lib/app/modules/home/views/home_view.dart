@@ -55,14 +55,14 @@ class HomeView extends GetView<HomeController> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'HỘP CÔNG CỤ ANDROID',
+                                  'Android Toolbox',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w900,
                                     color: textPrimary,
-                                    letterSpacing: 0.3,
+                                    letterSpacing: -0.3,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -142,47 +142,79 @@ class HomeView extends GetView<HomeController> {
                       width: 1,
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(Icons.speed_rounded, color: Colors.white, size: 28),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TRẠNG THÁI HỆ THỐNG • HOẠT ĐỘNG',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: isDark ? AppColors.primaryLight : AppColors.primary,
-                                letterSpacing: 1.0,
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'HỆ THỐNG HOẠT ĐỘNG',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppColors.primaryLight : AppColors.primary,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            onTap: () => controller.refreshQuickStats(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.refresh_rounded,
+                                size: 18,
+                                color: isDark ? Colors.grey : Colors.grey.shade600,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Obx(() => Text(
-                              '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C • ${controller.localIpText}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: textPrimary,
-                              ),
-                            )),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh_rounded, size: 20),
-                        tooltip: 'Làm mới thông số',
-                        onPressed: () => controller.refreshQuickStats(),
-                      ),
+                      const SizedBox(height: 12),
+                      Obx(() => Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatusMetric(
+                              icon: controller.isBatteryCharging.value
+                                  ? Icons.battery_charging_full_rounded
+                                  : Icons.battery_std_rounded,
+                              label: controller.batteryPluggedText,
+                              value: '${controller.batteryLevel.value}%',
+                              color: controller.isBatteryCharging.value ? AppColors.success : AppColors.batteryColor,
+                              isDark: isDark,
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: isDark ? Colors.white12 : Colors.black12),
+                          Expanded(
+                            child: _buildStatusMetric(
+                              icon: Icons.thermostat_rounded,
+                              label: 'NHIỆT ĐỘ',
+                              value: '${controller.batteryTemp.value.toStringAsFixed(1)}°C',
+                              color: controller.batteryTemp.value > 38 ? Colors.red : Colors.orange,
+                              isDark: isDark,
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: isDark ? Colors.white12 : Colors.black12),
+                          Expanded(
+                            child: _buildStatusMetric(
+                              icon: Icons.wifi_rounded,
+                              label: 'MẠNG LAN',
+                              value: controller.localIpText,
+                              color: AppColors.networkColor,
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      )),
                     ],
                   ),
                 ),
@@ -195,16 +227,16 @@ class HomeView extends GetView<HomeController> {
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.95,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.02,
                 ),
                 delegate: SliverChildListDelegate([
                   // 1. 📦 Quản lý APK
                   Obx(() => BentoCard(
                     title: 'Quản lý APK',
-                    subtitle: '${controller.installedAppsCount.value} ứng dụng • Lọc tải ngoài',
-                    badge: 'LỌC APP NGOÀI',
+                    subtitle: '${controller.installedAppsCount.value} ứng dụng đã cài',
+                    badge: 'APK NGOÀI',
                     icon: Icons.inventory_2_rounded,
                     accentColor: AppColors.apkColor,
                     onTap: () => Get.toNamed(AppRoutes.APK),
@@ -213,7 +245,7 @@ class HomeView extends GetView<HomeController> {
                   // 2. 📋 Bộ nhớ tạm
                   Obx(() => BentoCard(
                     title: 'Bộ nhớ tạm',
-                    subtitle: '${controller.clipboardService.items.length} mục đã lưu',
+                    subtitle: '${controller.clipboardService.items.length} mục đã sao chép',
                     badge: 'CLIPBOARD',
                     icon: Icons.content_paste_rounded,
                     accentColor: AppColors.clipboardColor,
@@ -223,8 +255,8 @@ class HomeView extends GetView<HomeController> {
                   // 3. 📡 Mạng & Ping
                   Obx(() => BentoCard(
                     title: 'Mạng & DNS',
-                    subtitle: 'Private DNS • ${controller.localIpText}',
-                    badge: 'DNS & PING',
+                    subtitle: controller.localIpText,
+                    badge: 'DNS',
                     icon: Icons.wifi_tethering_rounded,
                     accentColor: AppColors.networkColor,
                     onTap: () => Get.toNamed(AppRoutes.NETWORK),
@@ -234,17 +266,17 @@ class HomeView extends GetView<HomeController> {
                   Obx(() => BentoCard(
                     title: 'Pin & Sức khỏe',
                     subtitle: '${controller.batteryLevel.value}% • ${controller.batteryTemp.value.toStringAsFixed(1)}°C',
-                    badge: 'CHAI PIN & CHU KỲ',
-                    icon: Icons.battery_charging_full_rounded,
-                    accentColor: AppColors.batteryColor,
+                    badge: controller.isBatteryCharging.value ? 'ĐANG SẠC' : 'DÙNG PIN',
+                    icon: controller.isBatteryCharging.value ? Icons.battery_charging_full_rounded : Icons.battery_std_rounded,
+                    accentColor: controller.isBatteryCharging.value ? AppColors.success : AppColors.batteryColor,
                     onTap: () => Get.toNamed(AppRoutes.BATTERY),
                   )),
 
                   // 5. 📁 Truyền tệp Web
                   Obx(() => BentoCard(
                     title: 'Truyền tệp Web',
-                    subtitle: controller.webServer.isRunning.value ? 'Đang phát sóng LAN' : 'Kéo thả Wi-Fi & Xác nhận',
-                    badge: controller.webServer.isRunning.value ? 'TRỰC TUYẾN' : 'WEB SHARE',
+                    subtitle: controller.webServer.isRunning.value ? 'Đang phát sóng LAN' : 'Chia sẻ tệp qua Wi-Fi',
+                    badge: controller.webServer.isRunning.value ? 'ONLINE' : 'WEB',
                     icon: Icons.folder_shared_rounded,
                     accentColor: AppColors.fileTransferColor,
                     onTap: () => Get.toNamed(AppRoutes.FILE_TRANSFER),
@@ -253,8 +285,8 @@ class HomeView extends GetView<HomeController> {
                   // 6. 🔐 Quyền riêng tư
                   Obx(() => BentoCard(
                     title: 'Quyền riêng tư',
-                    subtitle: '${controller.highRiskAppsCount.value} app rủi ro',
-                    badge: 'KIỂM TOÁN',
+                    subtitle: '${controller.highRiskAppsCount.value} app cần chú ý',
+                    badge: 'BẢO MẬT',
                     icon: Icons.security_rounded,
                     accentColor: AppColors.privacyColor,
                     onTap: () => Get.toNamed(AppRoutes.PRIVACY),
@@ -263,7 +295,7 @@ class HomeView extends GetView<HomeController> {
                   // 7. ⚙️ Công cụ ADB
                   Obx(() => BentoCard(
                     title: 'Công cụ ADB',
-                    subtitle: controller.isShizukuRunning.value ? 'Shizuku sẵn sàng' : 'Không dây & Logcat',
+                    subtitle: controller.isShizukuRunning.value ? 'Shizuku đang chạy' : 'Logcat & Gỡ lỗi ADB',
                     badge: 'LOGCAT',
                     icon: Icons.terminal_rounded,
                     accentColor: AppColors.adbColor,
@@ -273,8 +305,8 @@ class HomeView extends GetView<HomeController> {
                   // 8. 🛠 Cảm biến & Máy
                   BentoCard(
                     title: 'Cảm biến & Test',
-                    subtitle: 'Nước, Loa 165Hz & Mic',
-                    badge: 'TEST PHẦN CỨNG',
+                    subtitle: 'Kháng nước & Loa 165Hz',
+                    badge: 'TEST',
                     icon: Icons.hardware_rounded,
                     accentColor: AppColors.toolsColor,
                     onTap: () => Get.toNamed(AppRoutes.DEVICE_INFO),
@@ -322,5 +354,51 @@ class HomeView extends GetView<HomeController> {
       return Tooltip(message: tooltip, child: button);
     }
     return button;
+  }
+
+  Widget _buildStatusMetric({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

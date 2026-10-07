@@ -21,6 +21,7 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
@@ -187,6 +188,43 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)
+                    }
+                }
+                "scanMediaFile" -> {
+                    try {
+                        val path = call.argument<String>("path") ?: ""
+                        if (path.isNotEmpty()) {
+                            MediaScannerConnection.scanFile(this, arrayOf(path), null) { _, _ -> }
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "openAllFilesAccessSettings" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                data = Uri.parse("package:$packageName")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e2: Exception) {
+                            result.error("ERROR", e2.message, null)
+                        }
                     }
                 }
                 "openWirelessDebuggingSettings" -> {
@@ -518,12 +556,30 @@ class MainActivity : FlutterActivity() {
             else -> "Good"
         }
 
-        val pluggedRaw = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
+        val statusRaw = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN) ?: BatteryManager.BATTERY_STATUS_UNKNOWN
+        val pluggedRaw = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+
+        // Device is strictly charging only when Android OS reports CHARGING or FULL with power plugged in
+        val isCharging = when (statusRaw) {
+            BatteryManager.BATTERY_STATUS_CHARGING -> true
+            BatteryManager.BATTERY_STATUS_FULL -> pluggedRaw > 0
+            BatteryManager.BATTERY_STATUS_DISCHARGING, BatteryManager.BATTERY_STATUS_NOT_CHARGING -> false
+            else -> pluggedRaw > 0
+        }
+
+        val status = when (statusRaw) {
+            BatteryManager.BATTERY_STATUS_CHARGING -> "Charging"
+            BatteryManager.BATTERY_STATUS_DISCHARGING -> "Discharging"
+            BatteryManager.BATTERY_STATUS_FULL -> "Full"
+            BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "Not Charging"
+            else -> if (isCharging) "Charging" else "Discharging"
+        }
+
         val plugged = when (pluggedRaw) {
             BatteryManager.BATTERY_PLUGGED_AC -> "AC Charger"
             BatteryManager.BATTERY_PLUGGED_USB -> "USB Port"
             BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless"
-            else -> "Discharging"
+            else -> "Unplugged"
         }
 
         val currentNow = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
@@ -572,6 +628,10 @@ class MainActivity : FlutterActivity() {
             "voltage" to voltage,
             "technology" to tech,
             "health" to health,
+            "status" to status,
+            "isCharging" to isCharging,
+            "statusRaw" to statusRaw,
+            "pluggedRaw" to pluggedRaw,
             "plugged" to plugged,
             "currentNow" to currentNow,
             "currentAverage" to currentAverage,

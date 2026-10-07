@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -47,7 +48,8 @@ class FileTransferController extends GetxController {
   }
 
   void _showIncomingPromptDialog(IncomingFilePrompt prompt) {
-    String selectedDest = prompt.requestedFolder;
+    final isImage = RegExp(r'\.(jpe?g|png|gif|webp|heic|bmp)$', caseSensitive: false).hasMatch(prompt.fileName);
+    String selectedDest = isImage ? 'pictures' : prompt.requestedFolder;
 
     Get.dialog(
       AlertDialog(
@@ -57,111 +59,151 @@ class FileTransferController extends GetxController {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.15),
+                color: isImage ? Colors.purple.withOpacity(0.15) : Colors.blue.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.cloud_download_rounded, color: Colors.blue),
+              child: Icon(
+                isImage ? Icons.image_rounded : Icons.cloud_download_rounded,
+                color: isImage ? Colors.purple : Colors.blue,
+              ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Yêu cầu nhận tệp mới',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                isImage ? 'Nhận hình ảnh mới' : 'Yêu cầu nhận tệp mới',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
         content: StatefulBuilder(
           builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Thiết bị từ trình duyệt Web vừa gửi một tệp sang điện thoại của bạn:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+            return ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: Get.height * 0.65),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isImage && File(prompt.tempFilePath).existsSync()) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 140,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Image.file(
+                            File(prompt.tempFilePath),
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => const SizedBox(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    Text(
+                      isImage
+                          ? 'Máy tính vừa gửi một ảnh sang điện thoại:'
+                          : 'Thiết bị từ trình duyệt Web vừa gửi một tệp sang máy bạn:',
+                      style: const TextStyle(fontSize: 12.5, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.insert_drive_file_rounded, size: 20, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              prompt.fileName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                isImage ? Icons.photo_rounded : Icons.insert_drive_file_rounded,
+                                size: 20,
+                                color: isImage ? Colors.purple : Colors.blue,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  prompt.fileName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Dung lượng: ${prompt.formattedSize} • Từ: ${prompt.clientIp}',
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Vị trí lưu trên điện thoại:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: selectedDest,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'pictures',
+                          child: Text('🖼️ Thư viện Ảnh & Album (/sdcard/Pictures)', style: TextStyle(fontSize: 12)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'download_webshare',
+                          child: Text('📁 Thư mục WebShare (Download/WebShare)', style: TextStyle(fontSize: 12)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'downloads',
+                          child: Text('📥 Thư mục Tải về (/sdcard/Download)', style: TextStyle(fontSize: 12)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'movies',
+                          child: Text('🎬 Video & Phim (/sdcard/Movies)', style: TextStyle(fontSize: 12)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'music',
+                          child: Text('🎵 Âm nhạc (/sdcard/Music)', style: TextStyle(fontSize: 12)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'documents',
+                          child: Text('📄 Tài liệu (/sdcard/Documents)', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            selectedDest = val;
+                          });
+                        }
+                      },
+                    ),
+                    if (isImage) ...[
+                      const SizedBox(height: 8),
                       Text(
-                        'Dung lượng: ${prompt.formattedSize} • Gửi từ: ${prompt.clientIp}',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        '✨ Ảnh lưu sẽ được tự động quét vào Thư viện & Bộ sưu tập của máy ngay lập tức.',
+                        style: TextStyle(fontSize: 11, color: Colors.green.shade700, fontStyle: FontStyle.italic),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Chọn vị trí lưu tệp trên điện thoại:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedDest,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'download_webshare',
-                      child: Text('📁 Thư mục WebShare (Download/WebShare)', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'downloads',
-                      child: Text('📥 Thư mục Tải về (/sdcard/Download)', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'pictures',
-                      child: Text('🖼️ Thư viện Ảnh (/sdcard/Pictures)', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'movies',
-                      child: Text('🎬 Video & Phim (/sdcard/Movies)', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'music',
-                      child: Text('🎵 Âm nhạc (/sdcard/Music)', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'documents',
-                      child: Text('📄 Tài liệu (/sdcard/Documents)', style: TextStyle(fontSize: 12)),
-                    ),
                   ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        selectedDest = val;
-                      });
-                    }
-                  },
                 ),
-              ],
+              ),
             );
           },
         ),

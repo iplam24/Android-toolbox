@@ -35,14 +35,15 @@ class BatteryController extends GetxController {
   String get pluggedText {
     final b = batteryInfo.value;
     if (b == null) return 'Không rõ';
+    if (!b.isCharging) {
+      if (b.status.toLowerCase() == 'full' || b.level >= 100) return 'PIN ĐẦY (100%)';
+      return 'ĐANG DÙNG PIN';
+    }
     final p = b.plugged.toLowerCase();
     if (p.contains('ac')) return 'SẠC AC (CỦ SẠC)';
     if (p.contains('usb')) return 'SẠC USB (MÁY TÍNH)';
     if (p.contains('wireless')) return 'SẠC KHÔNG DÂY';
-    if (p.contains('charging')) return 'ĐANG SẠC';
-    if (p.contains('discharging') || p.contains('unplugged')) return 'ĐANG DÙNG PIN';
-    if (p.contains('full')) return 'PIN ĐẦY';
-    return b.plugged.toUpperCase();
+    return 'ĐANG SẠC PIN';
   }
 
   String get healthText {

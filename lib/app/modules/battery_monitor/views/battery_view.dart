@@ -256,10 +256,10 @@ class BatteryView extends GetView<BatteryController> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: _buildMetricCard(
-                      'CÔNG SUẤT SẠC',
-                      b.wattage > 0 ? '${b.wattage.toStringAsFixed(1)} W' : 'Đang dùng pin',
-                      Icons.speed_rounded,
-                      Colors.cyan,
+                      isCharging ? 'CÔNG SUẤT SẠC' : 'CÔNG SUẤT TIÊU THỤ',
+                      b.wattage > 0 ? '${b.wattage.toStringAsFixed(1)} W' : (isCharging ? 'Đang nạp' : 'Tiết kiệm pin'),
+                      isCharging ? Icons.bolt_rounded : Icons.electric_meter_rounded,
+                      isCharging ? AppColors.success : Colors.cyan,
                     ),
                   ),
                 ],
@@ -278,17 +278,22 @@ class BatteryView extends GetView<BatteryController> {
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
                       ),
                       const SizedBox(height: 12),
+                      _buildDetailRow('Trạng thái nguồn', controller.pluggedText),
+                      _buildDetailRow(
+                        'Nguồn cấp sạc',
+                        isCharging ? b.plugged : 'Không cắm sạc (Dùng pin thiết bị)',
+                      ),
                       _buildDetailRow('Công nghệ cell pin', b.technology),
                       _buildDetailRow(
                         'Dòng điện tức thời',
                         b.currentNow != 0
-                            ? '${(b.currentNow / 1000.0).toStringAsFixed(0)} mA (${b.currentNow > 0 ? "Đang sạc" : "Đang xả"})'
-                            : '0 mA',
+                            ? '${(b.currentNow.abs() / 1000.0).toStringAsFixed(0)} mA (${isCharging ? "Dòng nạp vào" : "Dòng tiêu thụ pin"})'
+                            : '0 mA (${isCharging ? "Pin đã đầy" : "Chế độ nghỉ"})',
                       ),
                       if (b.currentAverage != 0)
                         _buildDetailRow(
                           'Dòng điện trung bình',
-                          '${(b.currentAverage / 1000.0).toStringAsFixed(0)} mA',
+                          '${(b.currentAverage.abs() / 1000.0).toStringAsFixed(0)} mA',
                         ),
                       _buildDetailRow('Mức pin được báo từ OS', '${b.capacity}%'),
                     ],

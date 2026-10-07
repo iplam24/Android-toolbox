@@ -15,20 +15,21 @@ class HomeController extends GetxController {
   final RxInt installedAppsCount = 0.obs;
   final RxInt batteryLevel = 0.obs;
   final RxDouble batteryTemp = 0.0.obs;
-  final RxString batteryPlugged = 'Discharging'.obs;
+  final RxString batteryPlugged = 'Unplugged'.obs;
+  final RxBool isBatteryCharging = false.obs;
   final RxString localIp = 'Offline'.obs;
   final RxBool isShizukuRunning = false.obs;
   final RxInt highRiskAppsCount = 0.obs;
 
   String get batteryPluggedText {
+    if (!isBatteryCharging.value) {
+      return 'DÙNG PIN';
+    }
     final p = batteryPlugged.value.toLowerCase();
     if (p.contains('ac')) return 'SẠC AC';
     if (p.contains('usb')) return 'SẠC USB';
-    if (p.contains('wireless')) return 'SẠC KHÔNG DÂY';
-    if (p.contains('charging')) return 'ĐANG SẠC';
-    if (p.contains('discharging') || p.contains('unplugged')) return 'DÙNG PIN';
-    if (p.contains('full')) return 'PIN ĐẦY';
-    return 'DÙNG PIN';
+    if (p.contains('wireless')) return 'SẠC K.DÂY';
+    return 'ĐANG SẠC';
   }
 
   String get localIpText {
@@ -88,6 +89,7 @@ class HomeController extends GetxController {
         batteryLevel.value = battery.level;
         batteryTemp.value = battery.temperature;
         batteryPlugged.value = battery.plugged;
+        isBatteryCharging.value = battery.isCharging;
       }
 
       // 2. Local IP

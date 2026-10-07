@@ -178,6 +178,25 @@ class SystemToolsService extends GetxService {
     } catch (_) {}
   }
 
+  Future<bool> scanMediaFile(String filePath) async {
+    try {
+      final bool? res = await _channel.invokeMethod('scanMediaFile', {'path': filePath});
+      return res ?? false;
+    } catch (e) {
+      print('Error scanning media file: $e');
+      return false;
+    }
+  }
+
+  Future<bool> openAllFilesAccessSettings() async {
+    try {
+      final bool? res = await _channel.invokeMethod('openAllFilesAccessSettings');
+      return res ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // --- Hardware Tests (Barometer, Tone, Mic) ---
   Future<bool> hasBarometerSensor() async {
     try {

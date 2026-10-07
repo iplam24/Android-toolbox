@@ -5,6 +5,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'system_tools_service.dart';
 
 class WebShareFileInfo {
   final String name;
@@ -242,6 +243,13 @@ class WebServerService extends GetxService {
         await temp.delete();
       }
 
+      // Automatically scan media files so they appear immediately in Android Photos & Gallery
+      if (_isMediaFile(finalFile.path)) {
+        try {
+          await SystemToolsService.to.scanMediaFile(finalFile.path);
+        } catch (_) {}
+      }
+
       prompt.decisionCompleter.complete(targetDir.path);
       transferredFiles.value++;
       await refreshFilesList();
@@ -251,6 +259,13 @@ class WebServerService extends GetxService {
     } finally {
       activePrompt.value = null;
     }
+  }
+
+  bool _isMediaFile(String filePath) {
+    final parts = filePath.split('.');
+    if (parts.length < 2) return false;
+    final ext = parts.last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp', 'mp4', 'mkv', 'mov', 'mp3', 'm4a', 'wav'].contains(ext);
   }
 
   Future<bool> startServer({int port = 8080}) async {
@@ -402,6 +417,12 @@ class WebServerService extends GetxService {
             final destFile = File('${destDir.path}/$finalName');
             await stagingFile.copy(destFile.path);
             await stagingFile.delete();
+
+            if (_isMediaFile(destFile.path)) {
+              try {
+                await SystemToolsService.to.scanMediaFile(destFile.path);
+              } catch (_) {}
+            }
 
             transferredFiles.value++;
             await refreshFilesList();
@@ -937,7 +958,19 @@ class WebServerService extends GetxService {
     }
 
     function uploadSingleFile(file) {
-      const folder = folderSelect.value;
+      let folder = folderSelect.value;
+      const lower = file.name.toLowerCase();
+      const isImg = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.gif') || lower.endsWith('.webp') || lower.endsWith('.heic') || lower.endsWith('.bmp');
+      const isVid = lower.endsWith('.mp4') || lower.endsWith('.mkv') || lower.endsWith('.mov') || lower.endsWith('.avi') || lower.endsWith('.webm');
+      const isAud = lower.endsWith('.mp3') || lower.endsWith('.m4a') || lower.endsWith('.wav') || lower.endsWith('.flac') || lower.endsWith('.aac') || lower.endsWith('.ogg');
+
+      // Smart Media Auto-routing: if user left default WebShare, intelligently send to Photos/Videos/Music
+      if (folder === 'download_webshare' || !folder) {
+        if (isImg) folder = 'pictures';
+        else if (isVid) folder = 'movies';
+        else if (isAud) folder = 'music';
+      }
+
       const itemId = 'queue_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
       const itemEl = document.createElement('div');

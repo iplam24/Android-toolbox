@@ -62,41 +62,46 @@ class BentoCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(isDark ? 0.12 : 0.10),
-                      borderRadius: BorderRadius.circular(14),
+                      color: accentColor.withOpacity(isDark ? 0.14 : 0.10),
+                      borderRadius: BorderRadius.circular(13),
                       border: Border.all(
-                        color: accentColor.withOpacity(0.3),
+                        color: accentColor.withOpacity(0.28),
                         width: 1,
                       ),
                     ),
-                    child: Icon(icon, color: accentColor, size: 24),
+                    child: Icon(icon, color: accentColor, size: 22),
                   ),
-                  if (badge != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: accentColor.withOpacity(isDark ? 0.15 : 0.10),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: accentColor.withOpacity(0.25),
-                          width: 0.8,
+                  if (badge != null && badge!.isNotEmpty)
+                    Flexible(
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: accentColor.withOpacity(isDark ? 0.16 : 0.10),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: accentColor.withOpacity(0.25),
+                            width: 0.8,
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        badge!,
-                        style: TextStyle(
-                          color: accentColor,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.3,
+                        child: Text(
+                          badge!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                       ),
                     )
@@ -105,41 +110,37 @@ class BentoCard extends StatelessWidget {
                   else
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 14,
-                      color: textSecondary.withOpacity(0.5),
+                      size: 13,
+                      color: textSecondary.withOpacity(0.35),
                     ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: textPrimary,
-                      letterSpacing: -0.3,
-                    ),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: textSecondary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.2,
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
